@@ -1,0 +1,158 @@
+{
+  "common": {
+    "brand": "TRAVELHOLIC",
+    "tagline": "Homes Not Rooms",
+    "switchToArabic": "العربية",
+    "switchToEnglish": "English",
+    "currency": {
+      "label": "Currency",
+      "egp": "EGP",
+      "usd": "USD"
+    },
+    "skipToContent": "Skip to content"
+  },
+  "nav": {
+    "homes": "Homes",
+    "destinations": "Destinations",
+    "experiences": "Experiences",
+    "stories": "Stories",
+    "about": "About",
+    "contact": "Contact",
+    "book": "Book direct",
+    "menuLabel": "Menu",
+    "closeLabel": "Close"
+  },
+  "footer": {
+    "tagline": "Stay with us — direct, always.",
+    "newsletter": {
+      "title": "The slow-news edition",
+      "blurb": "A short letter from the homes — new openings, neighborhood notes, and direct-only rates. About once a month.",
+      "placeholder": "Your email",
+      "submit": "Subscribe",
+      "success": "You're on the list. Welcome.",
+      "error": "Something went wrong. Try again?"
+    },
+    "columns": {
+      "homes": "Homes",
+      "company": "Company",
+      "help": "Help",
+      "legal": "Legal"
+    },
+    "links": {
+      "allHomes": "All homes",
+      "newCairo": "New Cairo",
+      "sheikhZayed": "Sheikh Zayed",
+      "downtownCairo": "Downtown Cairo",
+      "northCoast": "North Coast",
+      "elGouna": "El Gouna",
+      "goldenGates": "Golden Gates",
+      "about": "Our story",
+      "careers": "Careers",
+      "press": "Press",
+      "contact": "Contact",
+      "faq": "FAQ",
+      "smartCheckIn": "Smart check-in",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "cookies": "Cookie preferences"
+    },
+    "rights": "© {year} Travelholic. All rights reserved."
+  },
+  "whatsapp": {
+    "fabLabel": "Chat with us on WhatsApp",
+    "tooltip": "We reply in minutes",
+    "ctaPrimary": "Reserve via WhatsApp",
+    "disabledLabel": "WhatsApp coming soon"
+  },
+  "home": {
+    "metaTitle": "Travelholic — Serviced apartments across Egypt",
+    "metaDescription": "Homes Not Rooms. Premium serviced apartments in Cairo, El Gouna, the North Coast and beyond — book direct and save vs OTAs.",
+    "heroEyebrow": "Serviced apartments · Egypt",
+    "heroHeadline": "Homes, not rooms.",
+    "heroSubline": "Premium stays across Cairo, the coast, and the desert escapes. Designed to feel lived-in. Run like a hotel.",
+    "phasePlaceholder": "Phase 1 foundation — full home page lands in Phase 2."
+  },
+  "about": {
+    "metaTitle": "About — Travelholic",
+    "metaDescription": "The team, the philosophy, and the homes behind Travelholic.",
+    "heroHeadline": "إكرام الضيف — honoring the guest.",
+    "phasePlaceholder": "About content lands in Phase 2."
+  },
+  "destinations": {
+    "metaTitle": "Destinations — Travelholic",
+    "metaDescription": "Travelholic homes across New Cairo, Sheikh Zayed, Downtown Cairo, North Coast, El Gouna, and Golden Gates.",
+    "heroHeadline": "Six places to feel at home.",
+    "phasePlaceholder": "Destinations grid lands in Phase 2."
+  },
+  "destinationDetail": {
+    "metaTitle": "{name} — Travelholic",
+    "metaDescription": "Homes in {name}.",
+    "phasePlaceholder": "Destination detail lands in Phase 2."
+  },
+  "homes": {
+    "metaTitle": "Homes — Travelholic",
+    "metaDescription": "Browse Travelholic homes — book direct, save vs OTAs.",
+    "heroHeadline": "Find your home.",
+    "phasePlaceholder": "Listing + filters + map land in Phase 3."
+  },
+  "homeDetail": {
+    "metaTitle": "{title} — Travelholic",
+    "metaDescription": "{title} — book direct on Travelholic.",
+    "phasePlaceholder": "Home detail lands in Phase 3."
+  },
+  "experiences": {
+    "metaTitle": "Experiences — Travelholic",
+    "metaDescription": "Concierge, transport, wellness, culture, corporate stays.",
+    "heroHeadline": "Beyond the keys.",
+    "phasePlaceholder": "Experiences land in Phase 2."
+  },
+  "stories": {
+    "metaTitle": "Stories — Travelholic",
+    "metaDescription": "Neighborhood guides, local culture, travel tips, and notes from inside Travelholic.",
+    "heroHeadline": "Stories from the homes.",
+    "phasePlaceholder": "Stories index lands in Phase 2."
+  },
+  "storyDetail": {
+    "metaTitle": "{title} — Travelholic",
+    "metaDescription": "{excerpt}",
+    "phasePlaceholder": "Story body lands in Phase 2."
+  },
+  "contact": {
+    "metaTitle": "Contact — Travelholic",
+    "metaDescription": "Talk to the Travelholic team.",
+    "heroHeadline": "Talk to a real person.",
+    "phasePlaceholder": "Contact form lands in Phase 2."
+  },
+  "appPage": {
+    "metaTitle": "The Travelholic app — Travelholic",
+    "metaDescription": "Smart check-in, in-stay support, digital guidebook.",
+    "heroHeadline": "The app that gets out of your way.",
+    "phasePlaceholder": "App landing lands in Phase 2."
+  },
+  "privacy": {
+    "metaTitle": "Privacy — Travelholic",
+    "metaDescription": "How Travelholic handles your data.",
+    "heroHeadline": "Privacy.",
+    "phasePlaceholder": "Privacy policy lands in Phase 4."
+  },
+  "terms": {
+    "metaTitle": "Terms — Travelholic",
+    "metaDescription": "Terms of service.",
+    "heroHeadline": "Terms.",
+    "phasePlaceholder": "Terms land in Phase 4."
+  },
+  "errors": {
+    "notFound": {
+      "title": "This home is no longer available.",
+      "body": "The page you were looking for has checked out. Try one of these instead.",
+      "primaryCta": "Back to homes",
+      "secondaryCta": "Home"
+    },
+    "fiveHundred": {
+      "title": "Something at the front desk went wrong.",
+      "body": "We're looking into it. In the meantime, please try again.",
+      "retry": "Try again",
+      "home": "Back to home"
+    }
+  }
+}

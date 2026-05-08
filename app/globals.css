@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-stone: 239 237 229;
+    --color-navy: 0 39 62;
+    --color-maroon: 74 18 18;
+    --color-olive: 81 85 60;
+    --color-butter: 242 230 183;
+
+    --radius: 0.75rem;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-stone text-navy font-sans;
+    font-feature-settings: "ss01", "ss02", "cv11";
+  }
+
+  html[lang="ar"] body {
+    @apply font-arabic;
+  }
+
+  ::selection {
+    background-color: rgb(var(--color-butter));
+    color: rgb(var(--color-navy));
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: rgb(var(--color-navy) / 1);
+    --tw-ring-offset-color: rgb(var(--color-stone) / 1);
+  }
+
+  .on-dark :focus-visible,
+  [data-theme="dark"] :focus-visible {
+    --tw-ring-color: rgb(var(--color-butter) / 1);
+    --tw-ring-offset-color: rgb(var(--color-navy) / 1);
+  }
+}
+
+@layer utilities {
+  .text-eyebrow-style {
+    @apply text-eyebrow uppercase font-medium;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .stamp-divider {
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgb(var(--color-navy) / 0.18),
+      transparent
+    );
+    height: 1px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .motion-safe-only {
+      animation: none !important;
+      transition: none !important;
+      transform: none !important;
+    }
+  }
+}
