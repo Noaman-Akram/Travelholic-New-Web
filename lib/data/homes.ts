@@ -108,6 +108,7 @@ export const homes: Home[] = [
     gallery: makeGallery("th-lotus-1br", 8),
     houseRules: { en: NC_RULES_EN, ar: NC_RULES_AR },
     nearbyPlaces: [
+      { name: "Mivida Boulevard", distanceKm: 1.1, category: "restaurant" },
       { name: "Beano's Café Lotus", distanceKm: 0.6, category: "cafe" },
       { name: "Cairo Medical Center", distanceKm: 2.3, category: "hospital" },
     ],
@@ -149,6 +150,7 @@ export const homes: Home[] = [
     gallery: makeGallery("th-lotus-2br"),
     houseRules: { en: NC_RULES_EN, ar: NC_RULES_AR },
     nearbyPlaces: [
+      { name: "Mivida Boulevard", distanceKm: 1.0, category: "restaurant" },
       { name: "Cairo Festival City Mall", distanceKm: 3.1, category: "mall" },
       { name: "Nola Cupcakes", distanceKm: 1.4, category: "cafe" },
       { name: "Kazoku Sushi", distanceKm: 1.6, category: "restaurant" },
