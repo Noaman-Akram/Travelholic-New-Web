@@ -96,7 +96,12 @@ Each phase ends with build + lint + typecheck all green.
 ## 10. Phase checklist
 
 - [x] **Phase 0** — Bootstrap: Node installed locally, CLAUDE.md created
-- [x] **Phase 1** — Foundation: Next.js 15.1.6 + Tailwind 3.4 + tokens + Inter (next/font/google) + Myriad Arabic (local) + i18n/RTL via next-intl 4 + brand components + 13 route stubs + 12 mock homes + branded 404/500 + WhatsApp FAB. `npm run build` ✓, `lint` ✓, `typecheck` ✓. 72 static pages across `/en` + `/ar`. dir flips correctly. Currency switch (EGP/USD) cookie-persistent. WhatsApp FAB renders `aria-disabled` until `NEXT_PUBLIC_WHATSAPP_NUMBER` is set.
+- [x] **Phase 1** — Foundation: Next.js 15.1.6 + Tailwind 3.4 + tokens + Inter (next/font/google) + Myriad Arabic (local) + i18n/RTL via next-intl 4 + brand components + 13 route stubs + 14 mock homes across 7 real destinations + branded 404/500 + WhatsApp FAB. `npm run build` ✓, `lint` ✓, `typecheck` ✓. dir flips correctly. Currency switch (EGP/USD) cookie-persistent. WhatsApp FAB renders `aria-disabled` until `NEXT_PUBLIC_WHATSAPP_NUMBER` is set.
+
+  **Real Travelholic geography (locked from user 2026-05-09):**
+  - **New Cairo** (area) → 4 destinations: Lotus (18 units), AUC (14), Near CFC (14), 90th Street (24)
+  - **Golden Gates** (area, on the Mokattam–Nasr City corridor) → 3 destinations: GG Buildings (42 units), GG Villas (8), Nomads (14)
+  - Total real inventory: 134 units. Mock data ships 14 representative listings spanning all 7 destinations.
 - [ ] **Phase 2** — Marketing: Home (11 sections), About, Destinations, Destination details, Experiences, Stories, Contact. Animations + reduced-motion. Forms wired. Egypt-FAQ. Build green.
 - [ ] **Phase 3** — Booking surface: Homes listing (filters, URL sync, map), Home details (gallery, sticky widget, OtaPriceCompareStrip, similar homes), Booking 3-step Dialog with pricing math + WhatsApp + lead webhook. Build green.
 - [ ] **Phase 4** — Polish: JSON-LD, sitemap, robots, hreflang, OG images, Lighthouse 90/95/95/95+, cookie consent, README, Vercel deploy. Confirm production URL.

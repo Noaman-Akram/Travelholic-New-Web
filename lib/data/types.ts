@@ -4,9 +4,29 @@ export type Locale = "en" | "ar";
 export type Bilingual = { en: string; ar: string };
 export type BilingualArr = { en: string[]; ar: string[] };
 
+/**
+ * Top-level area Travelholic operates in. Each `Destination` belongs to one area.
+ * Used for navigation grouping — areas are not separate pages, they're how
+ * destinations are organized in the navbar mega-menu and footer.
+ */
+export type AreaSlug = "new-cairo" | "golden-gates";
+
+export type Area = {
+  slug: AreaSlug;
+  name: Bilingual;
+  blurb: Bilingual;
+};
+
+/**
+ * A `Destination` is a district or building cluster (the unit at which guests
+ * choose where to stay). e.g. "Lotus" is a district inside New Cairo;
+ * "GG Villas" is a building cluster inside Golden Gates.
+ */
 export type Destination = {
   slug: string;
   name: Bilingual;
+  area: AreaSlug;
+  areaName: Bilingual;
   shortPitch: Bilingual;
   longDescription: Bilingual;
   heroImage: string;
@@ -14,7 +34,7 @@ export type Destination = {
   homeCount: number;
   startingNightlyEGP: number;
   coordinates: { lat: number; lng: number };
-  category: "urban" | "suburban" | "beach" | "desert";
+  category: "urban" | "suburban" | "compound" | "co-living";
 };
 
 export type ReviewSource = "direct" | "airbnb" | "booking";

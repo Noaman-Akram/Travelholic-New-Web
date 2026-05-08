@@ -14,12 +14,13 @@ export function Footer({ locale }: { locale: "en" | "ar" }) {
       title: t("columns.homes"),
       links: [
         { href: "/homes", label: t("links.allHomes") },
-        { href: "/destinations/new-cairo", label: t("links.newCairo") },
-        { href: "/destinations/sheikh-zayed", label: t("links.sheikhZayed") },
-        { href: "/destinations/downtown-cairo", label: t("links.downtownCairo") },
-        { href: "/destinations/north-coast", label: t("links.northCoast") },
-        { href: "/destinations/el-gouna", label: t("links.elGouna") },
-        { href: "/destinations/golden-gates", label: t("links.goldenGates") },
+        { href: "/destinations/lotus", label: t("links.lotus"), areaLabel: t("links.newCairoLabel") },
+        { href: "/destinations/auc", label: t("links.auc"), areaLabel: t("links.newCairoLabel") },
+        { href: "/destinations/near-cfc", label: t("links.nearCfc"), areaLabel: t("links.newCairoLabel") },
+        { href: "/destinations/ninetieth-street", label: t("links.ninetiethStreet"), areaLabel: t("links.newCairoLabel") },
+        { href: "/destinations/gg-buildings", label: t("links.ggBuildings"), areaLabel: t("links.goldenGatesLabel") },
+        { href: "/destinations/gg-villas", label: t("links.ggVillas"), areaLabel: t("links.goldenGatesLabel") },
+        { href: "/destinations/nomads", label: t("links.nomads"), areaLabel: t("links.goldenGatesLabel") },
       ],
     },
     {
@@ -110,9 +111,14 @@ export function Footer({ locale }: { locale: "en" | "ar" }) {
                 <li key={`${col.title}-${link.label}`}>
                   <Link
                     href={link.href}
-                    className="text-sm text-navy/80 hover:text-navy transition-colors"
+                    className="block text-sm text-navy/80 hover:text-navy transition-colors leading-tight"
                   >
                     {link.label}
+                    {"areaLabel" in link && link.areaLabel ? (
+                      <span className="block text-[10px] uppercase tracking-eyebrow text-navy/40 mt-0.5">
+                        {link.areaLabel}
+                      </span>
+                    ) : null}
                   </Link>
                 </li>
               ))}
