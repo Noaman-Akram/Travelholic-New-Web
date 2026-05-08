@@ -9,7 +9,25 @@
       "egp": "EGP",
       "usd": "USD"
     },
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "perNight": "/ night",
+    "save": "Save",
+    "directPrice": "Direct",
+    "otaPrice": "Airbnb / Booking",
+    "bookDirect": "Book direct",
+    "viewDetails": "View home",
+    "exploreCta": "Explore",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "vsOta": "vs OTA",
+    "homesAvailable": "{count, plural, =0 {No homes} =1 {1 home} other {# homes}}",
+    "guests": "{count, plural, =1 {1 guest} other {# guests}}",
+    "nights": "{count, plural, =1 {1 night} other {# nights}}",
+    "bedrooms": "{count, plural, =0 {studio} =1 {1 bedroom} other {# bedrooms}}",
+    "baths": "{count, plural, =1 {1 bath} other {# baths}}",
+    "vsAirbnb": "vs Airbnb"
   },
   "nav": {
     "homes": "Homes",
@@ -67,36 +85,295 @@
     "ctaPrimary": "Reserve via WhatsApp",
     "disabledLabel": "WhatsApp coming soon"
   },
+  "booking": {
+    "title": "Find your home",
+    "destination": "Destination",
+    "destinationAny": "Anywhere",
+    "destinationPlaceholder": "Pick a destination",
+    "checkIn": "Check in",
+    "checkOut": "Check out",
+    "guests": "Guests",
+    "find": "Find homes",
+    "selectDates": "Pick dates",
+    "increment": "Add a guest",
+    "decrement": "Remove a guest"
+  },
   "home": {
     "metaTitle": "Travelholic — Serviced apartments across Egypt",
-    "metaDescription": "Homes Not Rooms. Premium serviced apartments in Cairo, El Gouna, the North Coast and beyond — book direct and save vs OTAs.",
-    "heroEyebrow": "Serviced apartments · Egypt",
+    "metaDescription": "Homes Not Rooms. Premium serviced apartments in New Cairo and Golden Gates — book direct and save vs OTAs.",
+    "heroEyebrow": "Serviced apartments · Cairo",
     "heroHeadline": "Homes, not rooms.",
-    "heroSubline": "Premium stays across Cairo, the coast, and the desert escapes. Designed to feel lived-in. Run like a hotel.",
-    "phasePlaceholder": "Phase 1 foundation — full home page lands in Phase 2."
+    "heroSubline": "Premium stays across New Cairo and Golden Gates — designed to feel lived-in, run like a hotel, priced lower when you book direct.",
+    "destinations": {
+      "eyebrow": "Where we are",
+      "title": "Two cities, seven addresses.",
+      "subtitle": "From the residential hush of Lotus to the airport-side calm of Golden Gates — pick the corner of Cairo that fits the trip.",
+      "newCairo": "New Cairo",
+      "goldenGates": "Golden Gates"
+    },
+    "featured": {
+      "eyebrow": "Featured homes",
+      "title": "Open this week.",
+      "subtitle": "A handful of homes our team would put their friends in. Direct rates undercut the platforms, and the savings line is our promise.",
+      "viewAll": "See all homes"
+    },
+    "why": {
+      "eyebrow": "Why Travelholic",
+      "title": "Four things we believe in.",
+      "pillars": [
+        {
+          "number": "01",
+          "title": "Homes that feel lived-in.",
+          "body": "Real kitchens, generous beds, books you'd actually read. None of the hotel emptiness."
+        },
+        {
+          "number": "02",
+          "title": "Operations that feel like a hotel.",
+          "body": "A real concierge. Replies in minutes, not hours. Airport pickup, doctor on call, dinner at 11 p.m."
+        },
+        {
+          "number": "03",
+          "title": "Tech that gets out of your way.",
+          "body": "Smart check-in. Mobile key. Digital guidebook in your pocket. No keys, no clipboards, no awkward 3 a.m. handovers."
+        },
+        {
+          "number": "04",
+          "title": "Local hands, global standards.",
+          "body": "Egyptian hospitality, run on the playbook of the best brands in the world. إكرام الضيف — translated into operations."
+        }
+      ]
+    },
+    "tech": {
+      "eyebrow": "The Travelholic app",
+      "title": "Quietly competent.",
+      "subtitle": "Built so that 95% of the stay never needs us — and so that the 5% that does feels effortless.",
+      "capabilities": [
+        {
+          "title": "Smart check-in",
+          "body": "Mobile key delivered before you land. Backup keypad code in case your phone's flat."
+        },
+        {
+          "title": "In-stay support",
+          "body": "A real person in your time zone, on WhatsApp. Most messages answered in under fifteen minutes."
+        },
+        {
+          "title": "Digital guidebook",
+          "body": "Wi-Fi password, neighborhood notes, the breakfast cart we send guests to — all in your pocket."
+        }
+      ]
+    },
+    "testimonials": {
+      "eyebrow": "What guests say",
+      "title": "The kind of reviews you write a friend.",
+      "quotes": [
+        {
+          "text": "Felt like a real home — slept like I was at my grandmother's, but with proper Wi-Fi.",
+          "name": "Mohamed A.",
+          "context": "New Cairo · 4 nights"
+        },
+        {
+          "text": "Smart lock worked first try. The team replied to a 2 a.m. message in fifteen minutes. Booked direct twice since.",
+          "name": "Sarah K.",
+          "context": "London → Cairo · 11 nights"
+        },
+        {
+          "text": "Saved real money booking direct vs the platforms. Same home, lower rate, better service.",
+          "name": "Daniel S.",
+          "context": "Berlin → Cairo · 7 nights"
+        },
+        {
+          "text": "I came for two weeks and stayed seven. The Nomads floor changed how I work from Cairo.",
+          "name": "Hala R.",
+          "context": "Long stay · 49 nights"
+        },
+        {
+          "text": "Booking, key, kitchen, coffee — every step better than the hotel chains we usually use for company travel.",
+          "name": "Ahmed F.",
+          "context": "Corporate stay · 9 nights"
+        }
+      ]
+    },
+    "partners": {
+      "eyebrow": "Trusted by",
+      "title": "The developers and landlords who back our homes.",
+      "subtitle": "We work with carefully chosen partners across New Cairo and Golden Gates. The names below are placeholders — real partner marks are loaded on launch."
+    },
+    "stories": {
+      "eyebrow": "Stories",
+      "title": "Notes from the homes.",
+      "subtitle": "A slow magazine about Cairo, hospitality, and the people who make Travelholic.",
+      "viewAll": "All stories"
+    },
+    "appSection": {
+      "eyebrow": "On your phone",
+      "title": "The whole stay — in one app.",
+      "body": "Booking management, mobile key, in-stay support, neighborhood guide. Built to leave you alone except when you need us.",
+      "capabilities": [
+        "Book + manage stays",
+        "Mobile key + smart lock",
+        "WhatsApp-style support",
+        "Pocket city guide"
+      ],
+      "appStore": "App Store",
+      "playStore": "Google Play",
+      "comingSoon": "Coming Q3 2026",
+      "learnMore": "Learn more"
+    },
+    "closing": {
+      "eyebrow": "Stay with us",
+      "title": "When you book direct,",
+      "titleAccent": "the home gets to know you.",
+      "subtitle": "Lower rate. Real concierge. A relationship that doesn't end at checkout.",
+      "primaryCta": "See homes",
+      "secondaryCta": "Reserve via WhatsApp"
+    },
+    "faq": {
+      "eyebrow": "Frequently asked",
+      "title": "Egypt-specific things worth knowing.",
+      "subtitle": "Eight questions guests ask most often. Direct answers, no marketing speak.",
+      "items": [
+        {
+          "q": "Can I stay with my partner?",
+          "a": "Egyptian law asks for a marriage certificate when two Arab passport holders share a room. If both your passports are non-Arab, no certificate is needed. We'll explain the specifics warmly when you book — there's no surprise at check-in."
+        },
+        {
+          "q": "Are visitors allowed?",
+          "a": "Same-gender visitors are welcome. Mixed-gender visitors are welcome only when they're first- or second-degree relatives. For other meetings, the lobby and the cafés a few minutes away are perfect."
+        },
+        {
+          "q": "What payment methods do you accept?",
+          "a": "Local Meeza cards, all international cards, and bank transfers. We accept payment in EGP and USD. Booking direct skips the platform spread — you pay less for the same home."
+        },
+        {
+          "q": "Is there long-stay pricing?",
+          "a": "Yes. Weekly and monthly discounts are applied automatically at booking — up to 22% off for stays of 30 nights or more. Our Nomads project at Golden Gates is built specifically for guests staying a month or longer."
+        },
+        {
+          "q": "Are pets allowed?",
+          "a": "Per home — some welcome pets, some don't. The detail is on each home page, and our concierge will sort the deposit and any small print before you arrive."
+        },
+        {
+          "q": "Can the team arrange airport pickup?",
+          "a": "Yes — black cars, fixed pricing, English-speaking drivers, from Cairo, Alexandria, or Hurghada airports. Set it up at booking or any time after."
+        },
+        {
+          "q": "What's the Wi-Fi like for remote work?",
+          "a": "Fast fiber, 100+ Mbps, in every home. Most homes have a dedicated workspace; our Nomads project includes a quiet co-working floor on the ground level."
+        },
+        {
+          "q": "How does smart check-in work?",
+          "a": "A mobile key arrives in your phone before you land. There's a backup keypad code so you're never stuck. Land at 3 a.m., walk into a quiet, ready home — no front desk, no waiting."
+        }
+      ]
+    }
   },
   "about": {
     "metaTitle": "About — Travelholic",
     "metaDescription": "The team, the philosophy, and the homes behind Travelholic.",
+    "heroEyebrow": "About Travelholic",
     "heroHeadline": "إكرام الضيف — honoring the guest.",
-    "phasePlaceholder": "About content lands in Phase 2."
+    "heroSubline": "We started Travelholic to make Cairo feel like home for the people we host. Five years on, that's still the only KPI that matters.",
+    "founder": {
+      "eyebrow": "A note from the founder",
+      "name": "Rashad Reda",
+      "role": "Founder",
+      "quote": "We didn't set out to build a serviced-apartment company. We set out to host the way Egyptians host — and the company is what came out the other side. Every home we open, we open with the same question: would I send my mother here?",
+      "signature": "— Rashad"
+    },
+    "values": {
+      "eyebrow": "What we believe",
+      "title": "Three quiet rules.",
+      "items": [
+        {
+          "title": "The guest comes first — even when no one is watching.",
+          "body": "إكرام الضيف is the principle that the guest's comfort is your responsibility, not your performance. We hire for it, train for it, and fire for the absence of it."
+        },
+        {
+          "title": "Direct over distribution.",
+          "body": "Platforms are a fine way to find us once. After that, the relationship belongs to the guest and the home. Lower rate, better service, repeat stays — everyone wins."
+        },
+        {
+          "title": "Boutique, never bland.",
+          "body": "Every home has a personality. We don't make 134 copies of the same room. The trade-off is that we'll never run a thousand homes — and we're at peace with that."
+        }
+      ]
+    },
+    "philosophy": {
+      "eyebrow": "Homes Not Rooms",
+      "title": "Why the language matters.",
+      "body": "The hospitality industry calls them units, listings, properties. We call them homes — because the difference shows up in the work. A home gets a real kitchen. A unit gets a kettle. A home gets a bookshelf. A unit gets a TV. The word changes what we look at, and what we look at changes what we ship."
+    },
+    "timeline": {
+      "eyebrow": "Our story so far",
+      "title": "Five years, seven destinations.",
+      "items": [
+        { "year": "2017", "title": "First home in Lotus.", "body": "A 2BR we ran ourselves, on weekends, while keeping our day jobs." },
+        { "year": "2019", "title": "Operations team.", "body": "Three full-time team members. First housekeeping playbook." },
+        { "year": "2021", "title": "Golden Gates compound.", "body": "Our largest cluster opens — fifteen apartments and our first proper concierge desk." },
+        { "year": "2023", "title": "The app.", "body": "Smart check-in goes live. 90% of arrivals now happen without a human handover." },
+        { "year": "2025", "title": "Nomads.", "body": "A long-stay project for remote workers — co-working floor, monthly rates, slower stays." },
+        { "year": "2026", "title": "Direct-first.", "body": "We launch this site to bring more guests into the direct relationship." }
+      ]
+    },
+    "stats": {
+      "eyebrow": "Travelholic in numbers",
+      "items": [
+        { "number": "42", "label": "homes" },
+        { "number": "2", "label": "areas" },
+        { "number": "12,000+", "label": "guests hosted" },
+        { "number": "38%", "label": "repeat-guest rate" }
+      ]
+    },
+    "team": {
+      "eyebrow": "The people",
+      "title": "A small team that takes hosting personally.",
+      "subtitle": "We hire slowly, train carefully, and stay small on purpose. Twelve full-time, plus a careful network of partners across cleaning, transport, and concierge.",
+      "rolePrefix": "Role"
+    },
+    "careers": {
+      "eyebrow": "Join us",
+      "title": "We hire one role at a time.",
+      "body": "If a Travelholic stay made you want to do this for a living, we want to hear from you. Send a note — even if no role is posted.",
+      "cta": "Send a note"
+    }
   },
   "destinations": {
     "metaTitle": "Destinations — Travelholic",
-    "metaDescription": "Travelholic homes across New Cairo, Sheikh Zayed, Downtown Cairo, North Coast, El Gouna, and Golden Gates.",
-    "heroHeadline": "Six places to feel at home.",
-    "phasePlaceholder": "Destinations grid lands in Phase 2."
+    "metaDescription": "Travelholic homes across New Cairo (Lotus, AUC, Near CFC, 90th Street) and Golden Gates (GG Buildings, GG Villas, Nomads).",
+    "heroEyebrow": "Where we are",
+    "heroHeadline": "Two cities, seven addresses.",
+    "heroSubline": "From the academic calm of AUC to the airport-side ease of Golden Gates — pick the corner of Cairo that fits the trip.",
+    "filters": {
+      "label": "Filter by area",
+      "all": "All",
+      "newCairo": "New Cairo",
+      "goldenGates": "Golden Gates"
+    },
+    "mapTitle": "Find us on the map",
+    "homesIn": "{count, plural, =1 {1 listing} other {# listings}}",
+    "from": "from"
   },
   "destinationDetail": {
     "metaTitle": "{name} — Travelholic",
     "metaDescription": "Homes in {name}.",
-    "phasePlaceholder": "Destination detail lands in Phase 2."
+    "neighborhood": {
+      "title": "The neighborhood",
+      "subtitle": "What you should know before you land."
+    },
+    "stayHere": {
+      "title": "Stay here",
+      "subtitle": "A few of the homes we run in this destination. Book direct and the savings sit in your pocket, not the platform's."
+    },
+    "viewAllInArea": "View all homes in {area}",
+    "viewListings": "View {count, plural, =1 {the listing} other {all # listings}}",
+    "from": "from",
+    "perNight": "/ night"
   },
   "homes": {
     "metaTitle": "Homes — Travelholic",
     "metaDescription": "Browse Travelholic homes — book direct, save vs OTAs.",
     "heroHeadline": "Find your home.",
-    "phasePlaceholder": "Listing + filters + map land in Phase 3."
+    "phasePlaceholder": "Listing, filters and map land in Phase 3."
   },
   "homeDetail": {
     "metaTitle": "{title} — Travelholic",
@@ -105,32 +382,112 @@
   },
   "experiences": {
     "metaTitle": "Experiences — Travelholic",
-    "metaDescription": "Concierge, transport, wellness, culture, corporate stays.",
-    "heroHeadline": "Beyond the keys.",
-    "phasePlaceholder": "Experiences land in Phase 2."
+    "metaDescription": "Concierge, transport, wellness, culture, corporate, long-stay services from Travelholic.",
+    "heroEyebrow": "Beyond the keys",
+    "heroHeadline": "Things we'll arrange while you sleep.",
+    "heroSubline": "Travelholic is a hospitality brand, not a key drop. The list below is what we set up for guests every week — sometimes before they even ask.",
+    "categories": {
+      "concierge": "Concierge",
+      "transport": "Transport",
+      "wellness": "Wellness",
+      "culture": "Culture",
+      "corporate": "Corporate",
+      "long-stay": "Long stays"
+    },
+    "closingEyebrow": "Need something not on the list?",
+    "closingTitle": "Just ask.",
+    "closingBody": "If it can be done in Cairo, our concierge can usually find a way. Send a message — the team replies in minutes, not hours.",
+    "closingCta": "Talk to the team"
   },
   "stories": {
     "metaTitle": "Stories — Travelholic",
     "metaDescription": "Neighborhood guides, local culture, travel tips, and notes from inside Travelholic.",
-    "heroHeadline": "Stories from the homes.",
-    "phasePlaceholder": "Stories index lands in Phase 2."
+    "heroEyebrow": "Stories",
+    "heroHeadline": "Notes from the homes.",
+    "heroSubline": "A slow magazine about Cairo, hospitality, and the people who make Travelholic.",
+    "filters": {
+      "all": "All",
+      "neighborhood": "Neighborhood",
+      "local-culture": "Local culture",
+      "travel-tips": "Travel tips",
+      "inside-travelholic": "Inside Travelholic"
+    },
+    "readMinutes": "{minutes} min read"
   },
   "storyDetail": {
     "metaTitle": "{title} — Travelholic",
     "metaDescription": "{excerpt}",
-    "phasePlaceholder": "Story body lands in Phase 2."
+    "publishedOn": "Published {date}",
+    "readTime": "{minutes} min read",
+    "shareTitle": "Share",
+    "relatedTitle": "More from the homes"
   },
   "contact": {
     "metaTitle": "Contact — Travelholic",
     "metaDescription": "Talk to the Travelholic team.",
+    "heroEyebrow": "Contact",
     "heroHeadline": "Talk to a real person.",
-    "phasePlaceholder": "Contact form lands in Phase 2."
+    "heroSubline": "WhatsApp is fastest. Email is fine. The form below works too — we read every one.",
+    "form": {
+      "name": "Your name",
+      "email": "Email",
+      "phone": "Phone (optional)",
+      "intent": "How can we help?",
+      "intentOptions": {
+        "stay": "Plan a stay",
+        "long": "Long-stay enquiry",
+        "corporate": "Corporate booking",
+        "press": "Press / partnerships",
+        "other": "Something else"
+      },
+      "message": "Your message",
+      "submit": "Send",
+      "sending": "Sending…",
+      "success": "Got it. We'll be in touch within a day.",
+      "error": "Something went wrong. Please try again or message us on WhatsApp.",
+      "errors": {
+        "name": "Tell us your name.",
+        "email": "Drop a real email so we can reach you.",
+        "intent": "Pick a topic so we can route this right.",
+        "message": "Type a few sentences so we can help."
+      }
+    },
+    "channels": {
+      "title": "The fast lanes",
+      "whatsappLabel": "WhatsApp",
+      "whatsappNote": "Replies in minutes",
+      "phoneLabel": "Phone",
+      "phoneNote": "9 AM – midnight, Cairo time",
+      "emailLabel": "Email",
+      "emailNote": "We read every message",
+      "addressLabel": "Office",
+      "addressLine1": "Lotus, New Cairo",
+      "addressLine2": "Cairo, Egypt"
+    },
+    "faqTitle": "Before you write —"
   },
   "appPage": {
     "metaTitle": "The Travelholic app — Travelholic",
-    "metaDescription": "Smart check-in, in-stay support, digital guidebook.",
-    "heroHeadline": "The app that gets out of your way.",
-    "phasePlaceholder": "App landing lands in Phase 2."
+    "metaDescription": "Smart check-in, in-stay support, digital guidebook — the Travelholic app.",
+    "heroEyebrow": "The Travelholic app",
+    "heroHeadline": "Quietly competent.",
+    "heroSubline": "Built so 95% of your stay never needs us — and so the 5% that does feels effortless.",
+    "comingSoon": "Coming Q3 2026 — early-access list opens at launch.",
+    "capabilities": {
+      "title": "What it does.",
+      "items": [
+        { "title": "Smart check-in", "body": "Mobile key delivered before you land. Backup keypad code in case your phone's flat." },
+        { "title": "In-stay support", "body": "A real person, on WhatsApp, in your time zone. Most messages answered in fifteen minutes." },
+        { "title": "Digital guidebook", "body": "Wi-Fi, neighborhood, the breakfast cart we send guests to — pocket-sized." },
+        { "title": "Booking management", "body": "Extend, modify, plan another stay — without ringing anyone." }
+      ]
+    },
+    "stores": {
+      "appStore": "App Store",
+      "playStore": "Google Play",
+      "notReady": "Stores open Q3 2026"
+    },
+    "faqTitle": "App questions"
   },
   "privacy": {
     "metaTitle": "Privacy — Travelholic",

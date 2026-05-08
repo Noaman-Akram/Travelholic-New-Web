@@ -141,6 +141,26 @@ const config: Config = {
         "4xl": "2rem",
         "5xl": "2.5rem",
       },
+      typography: () => ({
+        DEFAULT: {
+          css: {
+            "--tw-prose-body": "rgb(0 39 62 / 0.85)",
+            "--tw-prose-headings": "#00273E",
+            "--tw-prose-lead": "rgb(0 39 62 / 0.75)",
+            "--tw-prose-links": "#00273E",
+            "--tw-prose-bold": "#00273E",
+            "--tw-prose-counters": "rgb(0 39 62 / 0.6)",
+            "--tw-prose-bullets": "rgb(0 39 62 / 0.4)",
+            "--tw-prose-hr": "rgb(0 39 62 / 0.15)",
+            "--tw-prose-quotes": "#00273E",
+            "--tw-prose-quote-borders": "#F2E6B7",
+            "--tw-prose-captions": "rgb(0 39 62 / 0.6)",
+            "--tw-prose-code": "#00273E",
+            "--tw-prose-pre-code": "#EFEDE5",
+            "--tw-prose-pre-bg": "#00273E",
+          },
+        },
+      }),
       keyframes: {
         "fade-up": {
           "0%": { opacity: "0", transform: "translateY(16px)" },
@@ -157,7 +177,19 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography"),
+    function ({ addUtilities }: { addUtilities: (utilities: Record<string, Record<string, string>>) => void }) {
+      addUtilities({
+        ".no-scrollbar::-webkit-scrollbar": { display: "none" },
+        ".no-scrollbar": {
+          "-ms-overflow-style": "none",
+          "scrollbar-width": "none",
+        },
+      });
+    },
+  ],
 };
 
 export default config;

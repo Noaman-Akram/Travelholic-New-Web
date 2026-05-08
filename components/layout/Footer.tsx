@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { LocaleSwitch } from "./LocaleSwitch";
 import { CurrencySwitch } from "./CurrencySwitch";
+import { FooterNewsletter } from "./FooterNewsletter";
 
 export function Footer({ locale }: { locale: "en" | "ar" }) {
   const t = useTranslations("footer");
@@ -61,37 +62,7 @@ export function Footer({ locale }: { locale: "en" | "ar" }) {
             </p>
           </div>
 
-          <form
-            action="#"
-            method="post"
-            className="w-full lg:max-w-md"
-            aria-label={t("newsletter.title")}
-          >
-            <p className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/70">
-              {t("newsletter.title")}
-            </p>
-            <p className="mt-3 text-sm text-navy/80 leading-relaxed">
-              {t("newsletter.blurb")}
-            </p>
-            <div className="mt-4 flex gap-2">
-              <label htmlFor="footer-newsletter" className="sr-only">
-                {t("newsletter.placeholder")}
-              </label>
-              <input
-                id="footer-newsletter"
-                type="email"
-                required
-                placeholder={t("newsletter.placeholder")}
-                className="flex-1 rounded-full bg-stone px-5 py-3 text-sm border border-navy/15 placeholder-navy/45 focus:outline-none focus:ring-2 focus:ring-navy"
-              />
-              <button
-                type="submit"
-                className="rounded-full bg-navy text-stone px-6 py-3 text-sm font-medium hover:bg-navy-700 transition-colors duration-200"
-              >
-                {t("newsletter.submit")}
-              </button>
-            </div>
-          </form>
+          <FooterNewsletter />
         </div>
       </div>
 
