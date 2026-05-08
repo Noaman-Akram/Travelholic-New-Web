@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { PagePlaceholder } from "@/components/layout/PagePlaceholder";
 import type { AppLocale } from "@/i18n/routing";
+import { HomesPageClient } from "@/components/homes/HomesPageClient";
 
 type Props = { params: Promise<{ locale: AppLocale }> };
 
@@ -14,13 +14,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function HomesPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("homes");
-  return (
-    <PagePlaceholder
-      eyebrow="Homes"
-      heading={t("heroHeadline")}
-      body={t("phasePlaceholder")}
-      locale={locale}
-    />
-  );
+  return <HomesPageClient />;
 }

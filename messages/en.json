@@ -372,13 +372,221 @@
   "homes": {
     "metaTitle": "Homes — Travelholic",
     "metaDescription": "Browse Travelholic homes — book direct, save vs OTAs.",
+    "heroEyebrow": "Homes",
     "heroHeadline": "Find your home.",
-    "phasePlaceholder": "Listing, filters and map land in Phase 3."
+    "heroSubline": "Forty-two homes across two areas of Cairo. Direct rates undercut the platforms — every home shows the savings.",
+    "filters": {
+      "title": "Filters",
+      "destinations": "Destinations",
+      "destinationsAny": "Any",
+      "dates": "Dates",
+      "checkIn": "Check in",
+      "checkOut": "Check out",
+      "guests": "Guests",
+      "bedrooms": "Bedrooms",
+      "bedroomsAny": "Any",
+      "priceRange": "Price per night",
+      "priceFrom": "From",
+      "priceTo": "To",
+      "amenities": "Amenities",
+      "instantBook": "Instant book only",
+      "clearAll": "Clear all",
+      "apply": "Apply",
+      "showResults": "Show {count, plural, =0 {no results} =1 {1 result} other {# results}}",
+      "open": "Open filters"
+    },
+    "sort": {
+      "label": "Sort",
+      "recommended": "Recommended",
+      "priceLow": "Price · low to high",
+      "priceHigh": "Price · high to low",
+      "ratingHigh": "Top rated",
+      "newest": "Newest"
+    },
+    "view": {
+      "grid": "Grid",
+      "map": "Map"
+    },
+    "results": {
+      "count": "{count, plural, =0 {No homes match} =1 {1 home} other {# homes}}",
+      "empty": "No homes match those filters.",
+      "emptyBody": "Loosen a filter or two — or clear them all and start fresh.",
+      "emptyCta": "Clear filters"
+    }
   },
   "homeDetail": {
     "metaTitle": "{title} — Travelholic",
     "metaDescription": "{title} — book direct on Travelholic.",
-    "phasePlaceholder": "Home detail lands in Phase 3."
+    "share": "Share",
+    "save": "Save",
+    "viewAllPhotos": "View all {count} photos",
+    "lightbox": {
+      "of": "{current} of {total}",
+      "close": "Close gallery"
+    },
+    "highlights": "Highlights",
+    "description": "About this home",
+    "ota": {
+      "title": "Direct beats the platforms.",
+      "directLabel": "Direct on Travelholic",
+      "otaLabel": "Same home on Airbnb",
+      "savings": "You save",
+      "perNight": "/ night",
+      "totalSavings": "{amount} over {nights, plural, =1 {1 night} other {# nights}}",
+      "footnote": "Comparison rate sourced {date}. Direct rate locks at booking."
+    },
+    "amenities": {
+      "title": "What's inside",
+      "showAll": "Show all amenities",
+      "dialogTitle": "All amenities",
+      "categories": {
+        "essentials": "Essentials",
+        "kitchen": "Kitchen",
+        "comfort": "Comfort",
+        "smart": "Smart",
+        "safety": "Safety",
+        "logistics": "Logistics"
+      }
+    },
+    "amenityLabels": {
+      "wifi": "Fast Wi-Fi",
+      "smartLock": "Smart lock",
+      "workspace": "Dedicated workspace",
+      "kitchen": "Full kitchen",
+      "ac": "Air conditioning",
+      "tv": "Smart TV",
+      "washer": "Washer",
+      "dryer": "Dryer",
+      "pool": "Pool",
+      "gym": "Gym",
+      "parking": "Parking",
+      "balcony": "Balcony",
+      "seaView": "Sea view",
+      "petFriendly": "Pet friendly",
+      "elevator": "Elevator",
+      "security": "24/7 security",
+      "cleaningService": "Cleaning service",
+      "linens": "Fresh linens",
+      "coffee": "Coffee maker",
+      "iron": "Iron"
+    },
+    "nearby": {
+      "title": "Where you'll be",
+      "subtitle": "Walking-distance landmarks and the closest essentials.",
+      "kmAway": "{km} km away"
+    },
+    "nearbyCategories": {
+      "cafe": "Café",
+      "restaurant": "Restaurant",
+      "metro": "Transit",
+      "beach": "Beach",
+      "mall": "Mall",
+      "hospital": "Hospital"
+    },
+    "houseRules": {
+      "title": "House rules"
+    },
+    "cancellation": {
+      "title": "Cancellation",
+      "body": "Free cancellation up to 7 days before check-in. Within 7 days, the first night is non-refundable. Within 48 hours, the booking is non-refundable. Long-stay terms differ — see the booking dialog for the exact policy."
+    },
+    "reviews": {
+      "title": "What guests say",
+      "scoreLabel": "{rating} · {count, plural, =1 {1 review} other {# reviews}}",
+      "breakdown": {
+        "cleanliness": "Cleanliness",
+        "comfort": "Comfort",
+        "communication": "Communication",
+        "location": "Location",
+        "value": "Value"
+      },
+      "source": {
+        "direct": "Direct booking",
+        "airbnb": "Airbnb",
+        "booking": "Booking.com"
+      },
+      "viewMore": "View more reviews"
+    },
+    "similar": {
+      "title": "You might also like",
+      "subtitle": "A few homes our guests often book together with this one."
+    },
+    "panel": {
+      "selectDates": "Select dates",
+      "perNight": "per night",
+      "subtotal": "{nights, plural, =1 {# night} other {# nights}}",
+      "weeklyDiscount": "Weekly stay · {percent}% off",
+      "monthlyDiscount": "Monthly stay · {percent}% off",
+      "cleaningFee": "Cleaning fee",
+      "total": "Total",
+      "bookDirect": "Book direct",
+      "viaWhatsapp": "Reserve via WhatsApp",
+      "savesYou": "You save {amount} vs Airbnb",
+      "noPaymentNow": "You won't be charged yet"
+    },
+    "mobileBar": {
+      "from": "from",
+      "viewDates": "Pick dates",
+      "reserve": "Reserve"
+    },
+    "status": {
+      "available": "Available",
+      "limited": "Limited dates",
+      "unavailable": "Unavailable",
+      "instantBook": "Instant book"
+    },
+    "faqTitle": "Before you book"
+  },
+  "bookingDialog": {
+    "step1": {
+      "eyebrow": "Step 1 of 3",
+      "title": "Confirm your stay",
+      "checkIn": "Check in",
+      "checkOut": "Check out",
+      "guests": "Guests",
+      "nights": "{nights, plural, =1 {1 night} other {# nights}}",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "cleaningFee": "Cleaning fee",
+      "total": "Total",
+      "savings": "Saves you {amount} vs Airbnb",
+      "continue": "Continue"
+    },
+    "step2": {
+      "eyebrow": "Step 2 of 3",
+      "title": "Tell us about you",
+      "subtitle": "We use these to send your confirmation and brief the team before you arrive.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "phone": "Phone (with country code)",
+      "country": "Country",
+      "countryPlaceholder": "Where you're traveling from",
+      "specialRequests": "Anything we should know? (optional)",
+      "specialRequestsPlaceholder": "Late check-in, dietary, kids' ages, anything else.",
+      "terms": "I've read and agree to the booking terms.",
+      "back": "Back",
+      "reserve": "Reserve",
+      "errors": {
+        "firstName": "Tell us your first name.",
+        "lastName": "Tell us your last name.",
+        "email": "Drop a working email so we can send the confirmation.",
+        "phone": "We'll only use this for arrival logistics.",
+        "country": "Pick a country so the team can plan.",
+        "terms": "Please confirm you've read the terms."
+      }
+    },
+    "step3": {
+      "eyebrow": "Step 3 of 3",
+      "title": "You're booked.",
+      "subtitle": "We've sent confirmation to your email. The team will reach out on WhatsApp within the day to brief on arrival logistics.",
+      "whatsappCta": "Open chat with the team",
+      "closeCta": "Done"
+    },
+    "errors": {
+      "submit": "Something went wrong. Try once more, or message us on WhatsApp."
+    },
+    "whatsappPrefill": "Hi Travelholic — I just booked {home} from {checkIn} to {checkOut} for {guests, plural, =1 {1 guest} other {# guests}}. Total {total}. Booking ref: {ref}."
   },
   "experiences": {
     "metaTitle": "Experiences — Travelholic",

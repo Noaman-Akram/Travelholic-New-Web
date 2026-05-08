@@ -372,13 +372,221 @@
   "homes": {
     "metaTitle": "البيوت — تراڤل هوليك",
     "metaDescription": "تصفّح بيوت تراڤل هوليك — احجز مباشرة ووفّر مقابل المنصّات.",
+    "heroEyebrow": "البيوت",
     "heroHeadline": "اعثر على بيتك.",
-    "phasePlaceholder": "القائمة والفلاتر والخريطة تصل في المرحلة الثالثة."
+    "heroSubline": "اثنان وأربعون بيتًا في منطقتين بالقاهرة. الأسعار المباشرة أقلّ من المنصّات — كلّ بيت يعرض الوفر.",
+    "filters": {
+      "title": "فلاتر",
+      "destinations": "الوجهات",
+      "destinationsAny": "أيّ مكان",
+      "dates": "التواريخ",
+      "checkIn": "الدخول",
+      "checkOut": "المغادرة",
+      "guests": "الضيوف",
+      "bedrooms": "غرف النوم",
+      "bedroomsAny": "أيّ عدد",
+      "priceRange": "السعر لليلة",
+      "priceFrom": "من",
+      "priceTo": "إلى",
+      "amenities": "المرافق",
+      "instantBook": "حجز فوري فقط",
+      "clearAll": "مسح الكلّ",
+      "apply": "تطبيق",
+      "showResults": "عرض {count, plural, =0 {لا توجد نتائج} =1 {نتيجة واحدة} =2 {نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}",
+      "open": "فتح الفلاتر"
+    },
+    "sort": {
+      "label": "الترتيب",
+      "recommended": "المُختار",
+      "priceLow": "السعر · من الأقلّ",
+      "priceHigh": "السعر · من الأعلى",
+      "ratingHigh": "الأعلى تقييمًا",
+      "newest": "الأحدث"
+    },
+    "view": {
+      "grid": "شبكة",
+      "map": "خريطة"
+    },
+    "results": {
+      "count": "{count, plural, =0 {لا بيوت مطابقة} =1 {بيت واحد} =2 {بيتان} few {# بيوت} many {# بيتًا} other {# بيت}}",
+      "empty": "لا بيوت مطابقة لهذه الفلاتر.",
+      "emptyBody": "خفّف فلترًا أو اثنين — أو امسح الكلّ وابدأ من جديد.",
+      "emptyCta": "مسح الفلاتر"
+    }
   },
   "homeDetail": {
     "metaTitle": "{title} — تراڤل هوليك",
     "metaDescription": "{title} — احجز مباشرة على تراڤل هوليك.",
-    "phasePlaceholder": "تفاصيل البيت تصل في المرحلة الثالثة."
+    "share": "شارك",
+    "save": "احفظ",
+    "viewAllPhotos": "عرض كلّ الصور ({count})",
+    "lightbox": {
+      "of": "{current} من {total}",
+      "close": "إغلاق المعرض"
+    },
+    "highlights": "أبرز ما في البيت",
+    "description": "عن هذا البيت",
+    "ota": {
+      "title": "المباشر يهزم المنصّات.",
+      "directLabel": "مباشرة على تراڤل هوليك",
+      "otaLabel": "نفس البيت على Airbnb",
+      "savings": "توفّر",
+      "perNight": "/ ليلة",
+      "totalSavings": "{amount} على {nights, plural, =1 {ليلة} =2 {ليلتين} few {# ليالٍ} many {# ليلة} other {# ليلة}}",
+      "footnote": "السعر المقارن مأخوذ في {date}. السعر المباشر يُقفل عند الحجز."
+    },
+    "amenities": {
+      "title": "ما في البيت",
+      "showAll": "عرض كلّ المرافق",
+      "dialogTitle": "كلّ المرافق",
+      "categories": {
+        "essentials": "الأساسيات",
+        "kitchen": "المطبخ",
+        "comfort": "الراحة",
+        "smart": "ذكي",
+        "safety": "الأمان",
+        "logistics": "الخدمات"
+      }
+    },
+    "amenityLabels": {
+      "wifi": "واي فاي سريع",
+      "smartLock": "قفل ذكي",
+      "workspace": "مساحة عمل",
+      "kitchen": "مطبخ كامل",
+      "ac": "تكييف",
+      "tv": "تلفاز ذكي",
+      "washer": "غسّالة",
+      "dryer": "نشّافة",
+      "pool": "حمّام سباحة",
+      "gym": "جيم",
+      "parking": "موقف سيارة",
+      "balcony": "شرفة",
+      "seaView": "إطلالة بحر",
+      "petFriendly": "يقبل الحيوانات الأليفة",
+      "elevator": "أصانصير",
+      "security": "أمن على مدار الساعة",
+      "cleaningService": "خدمة تنظيف",
+      "linens": "مفارش جديدة",
+      "coffee": "ماكينة قهوة",
+      "iron": "مكواة"
+    },
+    "nearby": {
+      "title": "أين ستكون",
+      "subtitle": "معالم على بُعد المشي وأقرب الأساسيات.",
+      "kmAway": "{km} كم"
+    },
+    "nearbyCategories": {
+      "cafe": "مقهى",
+      "restaurant": "مطعم",
+      "metro": "مواصلات",
+      "beach": "شاطئ",
+      "mall": "مول",
+      "hospital": "مستشفى"
+    },
+    "houseRules": {
+      "title": "قواعد البيت"
+    },
+    "cancellation": {
+      "title": "الإلغاء",
+      "body": "إلغاء مجّاني حتى 7 أيام قبل الدخول. خلال 7 أيام، أوّل ليلة غير قابلة للاسترداد. خلال 48 ساعة، الحجز غير قابل للاسترداد. تختلف شروط الإقامات الطويلة — راجع نافذة الحجز للسياسة الكاملة."
+    },
+    "reviews": {
+      "title": "ماذا يقول الضيوف",
+      "scoreLabel": "{rating} · {count, plural, =1 {مراجعة واحدة} =2 {مراجعتان} few {# مراجعات} many {# مراجعة} other {# مراجعة}}",
+      "breakdown": {
+        "cleanliness": "النظافة",
+        "comfort": "الراحة",
+        "communication": "التواصل",
+        "location": "الموقع",
+        "value": "القيمة"
+      },
+      "source": {
+        "direct": "حجز مباشر",
+        "airbnb": "Airbnb",
+        "booking": "Booking.com"
+      },
+      "viewMore": "عرض المزيد من المراجعات"
+    },
+    "similar": {
+      "title": "قد تعجبك أيضًا",
+      "subtitle": "بيوت يحجزها الضيوف غالبًا مع هذا البيت."
+    },
+    "panel": {
+      "selectDates": "اختر التواريخ",
+      "perNight": "لليلة",
+      "subtotal": "{nights, plural, =1 {ليلة واحدة} =2 {ليلتان} few {# ليالٍ} many {# ليلة} other {# ليلة}}",
+      "weeklyDiscount": "إقامة أسبوعية · خصم {percent}٪",
+      "monthlyDiscount": "إقامة شهرية · خصم {percent}٪",
+      "cleaningFee": "رسوم التنظيف",
+      "total": "الإجمالي",
+      "bookDirect": "احجز مباشرة",
+      "viaWhatsapp": "احجز عبر واتساب",
+      "savesYou": "وفّرت {amount} مقابل Airbnb",
+      "noPaymentNow": "لن يتمّ خصم أيّ مبلغ الآن"
+    },
+    "mobileBar": {
+      "from": "من",
+      "viewDates": "اختر التواريخ",
+      "reserve": "احجز"
+    },
+    "status": {
+      "available": "متاح",
+      "limited": "تواريخ محدودة",
+      "unavailable": "غير متاح",
+      "instantBook": "حجز فوري"
+    },
+    "faqTitle": "قبل أن تحجز"
+  },
+  "bookingDialog": {
+    "step1": {
+      "eyebrow": "خطوة ١ من ٣",
+      "title": "أكّد إقامتك",
+      "checkIn": "الدخول",
+      "checkOut": "المغادرة",
+      "guests": "الضيوف",
+      "nights": "{nights, plural, =1 {ليلة واحدة} =2 {ليلتان} few {# ليالٍ} many {# ليلة} other {# ليلة}}",
+      "subtotal": "المجموع الفرعي",
+      "discount": "الخصم",
+      "cleaningFee": "رسوم التنظيف",
+      "total": "الإجمالي",
+      "savings": "وفّرت {amount} مقابل Airbnb",
+      "continue": "متابعة"
+    },
+    "step2": {
+      "eyebrow": "خطوة ٢ من ٣",
+      "title": "أخبرنا عنك",
+      "subtitle": "نستخدم هذه لإرسال التأكيد ولإعداد الفريق قبل وصولك.",
+      "firstName": "الاسم الأوّل",
+      "lastName": "اسم العائلة",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف (مع كود الدولة)",
+      "country": "الدولة",
+      "countryPlaceholder": "البلد الذي تسافر منه",
+      "specialRequests": "هل ثمة شيء يجدر بنا معرفته؟ (اختياري)",
+      "specialRequestsPlaceholder": "تسجيل دخول متأخّر، حساسيات، أعمار الأطفال، أيّ شيء آخر.",
+      "terms": "قرأت ووافقت على شروط الحجز.",
+      "back": "رجوع",
+      "reserve": "احجز",
+      "errors": {
+        "firstName": "أخبرنا باسمك الأوّل.",
+        "lastName": "أخبرنا باسم عائلتك.",
+        "email": "اكتب بريدًا إلكترونيًا حقيقيًا لإرسال التأكيد.",
+        "phone": "نستخدمه فقط لتنسيق الوصول.",
+        "country": "اختر الدولة لإعداد الفريق.",
+        "terms": "يرجى تأكيد قراءة الشروط."
+      }
+    },
+    "step3": {
+      "eyebrow": "خطوة ٣ من ٣",
+      "title": "حجزك تمّ.",
+      "subtitle": "أرسلنا التأكيد إلى بريدك. سيتواصل الفريق على واتساب خلال اليوم لتنسيق الوصول.",
+      "whatsappCta": "افتح المحادثة مع الفريق",
+      "closeCta": "تمّ"
+    },
+    "errors": {
+      "submit": "حدث خطأ ما. حاول مجدّدًا أو راسلنا على واتساب."
+    },
+    "whatsappPrefill": "أهلًا تراڤل هوليك — حجزت {home} من {checkIn} إلى {checkOut} لـ{guests, plural, =1 {ضيف واحد} other {# ضيوف}}. الإجمالي {total}. مرجع الحجز: {ref}."
   },
   "experiences": {
     "metaTitle": "التجارب — تراڤل هوليك",
