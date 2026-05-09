@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { destinations, homes, stories } from "@/lib/data";
+import { destinations, stories } from "@/lib/data";
+import { getAllHomes } from "@/lib/data/server";
 
 const STATIC_PATHS = [
   "",
@@ -31,10 +32,11 @@ function withAlternates(path: string): MetadataRoute.Sitemap[number]["alternates
   };
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
   const now = new Date();
   const entries: MetadataRoute.Sitemap = [];
+  const homes = await getAllHomes();
 
   for (const path of STATIC_PATHS) {
     for (const locale of LOCALES) {

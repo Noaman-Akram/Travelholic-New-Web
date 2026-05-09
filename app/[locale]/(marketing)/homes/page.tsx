@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { AppLocale } from "@/i18n/routing";
 import { HomesPageClient } from "@/components/homes/HomesPageClient";
+import { getAllHomes } from "@/lib/data/server";
 
 type Props = { params: Promise<{ locale: AppLocale }> };
 
@@ -14,5 +15,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function HomesPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <HomesPageClient />;
+  const homes = await getAllHomes();
+  return <HomesPageClient initialHomes={homes} />;
 }

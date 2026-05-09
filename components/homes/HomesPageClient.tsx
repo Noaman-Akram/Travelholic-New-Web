@@ -8,6 +8,8 @@ import { HomesFilters } from "./HomesFilters";
 import { HomesTopBar } from "./HomesTopBar";
 import { HomesGrid } from "./HomesGrid";
 import { useHomesFilters } from "./useHomesFilters";
+import { HomesProvider } from "./HomesContext";
+import type { Home } from "@/lib/data/types";
 
 const HomesMap = dynamic(() => import("./HomesMap").then((m) => m.HomesMap), {
   ssr: false,
@@ -16,11 +18,13 @@ const HomesMap = dynamic(() => import("./HomesMap").then((m) => m.HomesMap), {
   ),
 });
 
-export function HomesPageClient() {
+export function HomesPageClient({ initialHomes }: { initialHomes: Home[] }) {
   return (
-    <Suspense fallback={null}>
-      <HomesPageBody />
-    </Suspense>
+    <HomesProvider homes={initialHomes}>
+      <Suspense fallback={null}>
+        <HomesPageBody />
+      </Suspense>
+    </HomesProvider>
   );
 }
 

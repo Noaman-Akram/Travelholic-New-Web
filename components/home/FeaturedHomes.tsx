@@ -7,21 +7,23 @@ import { Reveal } from "@/components/motion/Reveal";
 import { PropertyCard } from "@/components/home-card/PropertyCard";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
-import { homes, destinations } from "@/lib/data";
+import { destinations } from "@/lib/data/destinations";
+import type { Home } from "@/lib/data/types";
 import type { AppLocale } from "@/i18n/routing";
 import { cn } from "@/lib/utils/cn";
 
-export function FeaturedHomes() {
+export function FeaturedHomes({ homes }: { homes: Home[] }) {
   const t = useTranslations("home.featured");
   const locale = useLocale() as AppLocale;
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(true);
 
-  // Take all homes that have OTA pricing (the savings story is the whole point) — fall back to top-rated otherwise.
-  const featured = homes
-    .filter((h) => h.pricing.otaPriceEGP)
-    .sort((a, b) => b.rating - a.rating)
+  // Prefer homes with OTA pricing (savings story); fall back to top-rated.
+  const withOta = homes.filter((h) => h.pricing.otaPriceEGP);
+  const pool = withOta.length >= 4 ? withOta : homes;
+  const featured = [...pool]
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
     .slice(0, 8);
 
   useEffect(() => {
@@ -102,6 +104,9 @@ export function FeaturedHomes() {
         ref={scrollerRef}
         className="no-scrollbar flex gap-5 lg:gap-6 overflow-x-auto px-5 sm:px-6 lg:px-8 xl:px-10 snap-x snap-mandatory"
       >
+        {featured.length === 0 ? (
+          <p className="text-sm text-navy/55 px-5">No featured homes available right now.</p>
+        ) : null}
         {featured.map((home) => {
           const dest = destinations.find((d) => d.slug === home.destinationSlug);
           return (

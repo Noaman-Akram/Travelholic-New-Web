@@ -4,11 +4,8 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowUpRight } from "lucide-react";
 import type { AppLocale } from "@/i18n/routing";
-import {
-  destinations,
-  getDestinationBySlug,
-  getHomesByDestination,
-} from "@/lib/data";
+import { destinations, getDestinationBySlug } from "@/lib/data";
+import { getHomesByDestination } from "@/lib/data/server";
 import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/button";
@@ -46,7 +43,7 @@ export default async function DestinationDetailPage({ params }: Props) {
 
   const t = await getTranslations("destinationDetail");
   const tDest = await getTranslations("destinations");
-  const homes = getHomesByDestination(destination.slug);
+  const homes = await getHomesByDestination(destination.slug);
   const otherInArea = destinations
     .filter((d) => d.area === destination.area && d.slug !== destination.slug)
     .slice(0, 3);

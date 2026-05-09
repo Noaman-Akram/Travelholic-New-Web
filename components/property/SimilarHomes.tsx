@@ -1,11 +1,13 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Reveal } from "@/components/motion/Reveal";
 import { PropertyCard } from "@/components/home-card/PropertyCard";
-import { homes, destinations } from "@/lib/data";
+import { destinations } from "@/lib/data";
+import { getAllHomes } from "@/lib/data/server";
 import type { Home } from "@/lib/data/types";
 
-export function SimilarHomes({ current }: { current: Home }) {
-  const t = useTranslations("homeDetail.similar");
+export async function SimilarHomes({ current }: { current: Home }) {
+  const t = await getTranslations("homeDetail.similar");
+  const homes = await getAllHomes();
 
   const similar = homes
     .filter((h) => h.slug !== current.slug)

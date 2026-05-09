@@ -1,9 +1,12 @@
 import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
-import { getHomeBySlug, getDestinationBySlug } from "@/lib/data";
+import { getDestinationBySlug } from "@/lib/data";
+import { getAllHomes } from "@/lib/data/server";
 import type { AppLocale } from "@/i18n/routing";
 
-export const runtime = "edge";
+// Edge can't import server-only modules cleanly; nodejs is fast enough
+// since OG images are cached aggressively at the edge anyway.
+export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -18,7 +21,8 @@ export default async function HomeOgImage({
 }: {
   params: { locale: AppLocale; slug: string };
 }) {
-  const home = getHomeBySlug(params.slug);
+  const all = await getAllHomes();
+  const home = all.find((h) => h.slug === params.slug);
   if (!home) notFound();
   const destination = getDestinationBySlug(home.destinationSlug);
   const isAr = params.locale === "ar";

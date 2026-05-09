@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { homes } from "@/lib/data";
+import { useHomesData } from "./HomesContext";
 import type { AmenityKey, Home } from "@/lib/data/types";
 
 export type HomesView = "grid" | "map";
@@ -44,6 +44,7 @@ export function useHomesFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
+  const homes = useHomesData();
 
   const filters = useMemo<HomesFilters>(() => {
     const dest = searchParams.get("dest");
@@ -167,7 +168,7 @@ export function useHomesFilters() {
     });
   }, [setParams]);
 
-  const results = useMemo(() => applyFilters(homes, filters, sort), [filters, sort]);
+  const results = useMemo(() => applyFilters(homes, filters, sort), [homes, filters, sort]);
 
   const isFiltering =
     filters.destinations.length > 0 ||

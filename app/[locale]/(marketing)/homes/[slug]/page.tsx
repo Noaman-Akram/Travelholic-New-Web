@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { AppLocale } from "@/i18n/routing";
-import { homes, getHomeBySlug, getDestinationBySlug } from "@/lib/data";
+import { getDestinationBySlug } from "@/lib/data";
+import { getHomeBySlug, getAllHomes, homesFallback } from "@/lib/data/server";
 import { Link } from "@/i18n/navigation";
 import { Reveal } from "@/components/motion/Reveal";
 import { HomeGalleryHero } from "@/components/property/HomeGalleryHero";
@@ -22,15 +23,19 @@ import { lodgingBusiness, breadcrumbList, faqPage } from "@/lib/seo/jsonLd";
 type Props = { params: Promise<{ locale: AppLocale; slug: string }> };
 type FAQItem = { q: string; a: string };
 
-export function generateStaticParams() {
-  return homes.flatMap((h) =>
+export async function generateStaticParams() {
+  // Pre-render all live Hostify homes at build time. Falls back to bundled
+  // mock data when Hostify is unreachable (e.g. CI without an API key).
+  const all = await getAllHomes();
+  const list = all.length > 0 ? all : homesFallback;
+  return list.flatMap((h) =>
     (["en", "ar"] as const).map((locale) => ({ locale, slug: h.slug })),
   );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const home = getHomeBySlug(slug);
+  const home = await getHomeBySlug(slug);
   if (!home) return {};
   const t = await getTranslations({ locale, namespace: "homeDetail" });
   const title = home.title[locale];
@@ -43,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function HomeDetailPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const home = getHomeBySlug(slug);
+  const home = await getHomeBySlug(slug);
   if (!home) notFound();
 
   const destination = getDestinationBySlug(home.destinationSlug);

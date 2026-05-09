@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { AppLocale } from "@/i18n/routing";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { organization, website, faqPage } from "@/lib/seo/jsonLd";
+import { getFeaturedHomes } from "@/lib/data/server";
 import { HomeHero } from "@/components/home/HomeHero";
 import { FeaturedDestinations } from "@/components/home/FeaturedDestinations";
 import { FeaturedHomes } from "@/components/home/FeaturedHomes";
@@ -36,13 +37,14 @@ export default async function HomePage({
   setRequestLocale(locale);
   const tFaq = await getTranslations({ locale, namespace: "home.faq" });
   const faqItems = (tFaq.raw("items") as unknown as { q: string; a: string }[]) ?? [];
+  const featuredHomes = await getFeaturedHomes(8);
 
   return (
     <div className="-mt-16 lg:-mt-20">
       <JsonLd data={[organization(locale), website(locale), faqPage(faqItems)]} />
       <HomeHero />
       <FeaturedDestinations />
-      <FeaturedHomes />
+      <FeaturedHomes homes={featuredHomes} />
       <WhyTravelholic />
       <TechEnabledSection />
       <TestimonialsLargeQuote />

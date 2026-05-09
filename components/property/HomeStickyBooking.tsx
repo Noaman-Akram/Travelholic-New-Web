@@ -9,8 +9,11 @@ import { useCurrency } from "@/lib/currency/context";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import { calcBookingPricing } from "@/lib/utils/bookingMath";
 import { BookingDialog } from "./BookingDialog";
+import { bookingDeepLink } from "@/lib/hostify/transform";
 import type { Home } from "@/lib/data/types";
 import type { AppLocale } from "@/i18n/routing";
+
+type HomeWithHostify = Home & { hostifyPrimaryId?: number };
 
 function formatISODate(date: Date): string {
   return date.toISOString().split("T")[0] ?? "";
@@ -173,16 +176,41 @@ export function HomeStickyBooking({ home }: { home: Home }) {
 
         {/* CTAs */}
         <div className="mt-6 space-y-2">
-          <Button
-            type="button"
-            variant="primary"
-            size="lg"
-            className="w-full"
-            disabled={!pricing}
-            onClick={() => setDialogOpen(true)}
-          >
-            {t("bookDirect")}
-          </Button>
+          {(() => {
+            const hostifyId = (home as HomeWithHostify).hostifyPrimaryId;
+            if (hostifyId) {
+              const href = bookingDeepLink({
+                hostifyId,
+                checkIn,
+                checkOut,
+                guests,
+              });
+              return (
+                <Button
+                  asChild
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                >
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    {t("bookDirect")}
+                  </a>
+                </Button>
+              );
+            }
+            return (
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                className="w-full"
+                disabled={!pricing}
+                onClick={() => setDialogOpen(true)}
+              >
+                {t("bookDirect")}
+              </Button>
+            );
+          })()}
 
           {whatsappHref ? (
             <Button asChild variant="ghost" size="lg" className="w-full">
