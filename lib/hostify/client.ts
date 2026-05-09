@@ -6,6 +6,43 @@ import type {
   HostifyPriceResponse,
 } from "./types";
 
+export type HostifyReservationCreateInput = {
+  listingId: number;
+  startDate: string;          // YYYY-MM-DD
+  endDate: string;            // YYYY-MM-DD
+  guests: number;
+  pets?: number;
+  name: string;
+  email: string;
+  phone: string;
+  totalPrice: number;         // in listing's currency (USD for Travelholic)
+  note?: string;
+  source?: string;            // displayed in the host inbox
+  status?: "accepted" | "pending";
+};
+
+export type HostifyReservationResponse = {
+  success: boolean;
+  reservation?: {
+    id: number;
+    confirmation_code?: string;
+    status?: string;
+    status_description?: string;
+    checkIn?: string;
+    checkOut?: string;
+    nights?: number;
+    guests?: number;
+    payout_price?: number;
+    base_price?: number;
+    cleaning_fee?: number;
+    subtotal?: number;
+    currency?: string;
+    listing_id?: number;
+  };
+  error?: string;
+  message?: string;
+};
+
 const DEFAULT_BASE = "https://api-rms.hostify.com";
 
 function getBase(): string {
@@ -66,6 +103,30 @@ async function request<T>(
     next,
   });
 
+  const text = await res.text();
+  if (!res.ok) {
+    throw new HostifyError(res.status, text);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new HostifyError(res.status, `Bad JSON: ${text.slice(0, 80)}`);
+  }
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const key = getKey();
+  if (!key) throw new HostifyError(0, "HOSTIFY_API_KEY not set");
+  const res = await fetch(getBase() + path, {
+    method: "POST",
+    headers: {
+      "x-api-key": key,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
   const text = await res.text();
   if (!res.ok) {
     throw new HostifyError(res.status, text);
@@ -139,5 +200,29 @@ export const hostify = {
       },
       { revalidate: false },
     );
+  },
+
+  /**
+   * Creates a reservation in Hostify. The booking shows up in the host's
+   * inbox / dashboard; if `status` is omitted, Hostify defaults to
+   * "accepted" per the API docs.
+   */
+  async createReservation(
+    input: HostifyReservationCreateInput,
+  ): Promise<HostifyReservationResponse> {
+    return postJson<HostifyReservationResponse>("/reservations", {
+      listing_id: input.listingId,
+      start_date: input.startDate,
+      end_date: input.endDate,
+      guests: input.guests,
+      pets: input.pets ?? 0,
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      total_price: Math.round(input.totalPrice * 100) / 100,
+      note: input.note ?? "",
+      source: input.source ?? "Travelholic Direct",
+      ...(input.status ? { status: input.status } : {}),
+    });
   },
 };

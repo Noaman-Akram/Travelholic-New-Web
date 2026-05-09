@@ -61,6 +61,7 @@ export function BookingDialog({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
   const [bookingRef, setBookingRef] = useState<string>("");
+  const [bookingStatus, setBookingStatus] = useState<"lead" | "pending" | "accepted">("lead");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof GuestData | "agreeTerms", boolean>>>({});
 
   const handleClose = (next: boolean) => {
@@ -127,13 +128,20 @@ export function BookingDialog({
           timestamp: new Date().toISOString(),
         }),
       });
-      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; ref?: string };
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        ref?: string;
+        status?: "lead" | "pending" | "accepted";
+        hostifyReservationId?: number;
+        error?: string;
+      };
       if (!res.ok || !json.ok) {
         setSubmitError(true);
         setSubmitting(false);
         return;
       }
       setBookingRef(json.ref ?? generateRef(home.slug));
+      setBookingStatus(json.status ?? "lead");
       setStep(3);
     } catch {
       setSubmitError(true);
@@ -349,11 +357,19 @@ export function BookingDialog({
                     <Check className="h-7 w-7 text-navy" />
                   </div>
                   <p className="mx-auto max-w-md text-body-lg leading-relaxed text-navy/80 text-pretty">
-                    {t("step3.subtitle")}
+                    {bookingStatus === "pending"
+                      ? t("step3.subtitlePending")
+                      : t("step3.subtitle")}
                   </p>
                   {bookingRef ? (
-                    <p className="mt-6 inline-block rounded-full bg-stone-100 px-4 py-1.5 text-xs uppercase tracking-eyebrow text-navy/65 font-mono">
-                      {bookingRef}
+                    <p className="mt-6 inline-flex items-baseline gap-2 rounded-full bg-stone-100 px-4 py-1.5 text-xs uppercase tracking-eyebrow text-navy/65">
+                      <span className="text-navy/45">{t("step3.refLabel")}</span>
+                      <span className="font-mono text-navy">{bookingRef}</span>
+                    </p>
+                  ) : null}
+                  {bookingStatus === "pending" ? (
+                    <p className="mt-4 mx-auto max-w-md text-xs text-navy/55">
+                      {t("step3.paymentNote")}
                     </p>
                   ) : null}
                 </motion.div>

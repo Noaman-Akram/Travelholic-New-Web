@@ -580,6 +580,9 @@
       "eyebrow": "Step 3 of 3",
       "title": "You're booked.",
       "subtitle": "We've sent confirmation to your email. The team will reach out on WhatsApp within the day to brief on arrival logistics.",
+      "subtitlePending": "Your booking is held for you. We've created the reservation in our system and sent confirmation to your email — payment instructions follow on WhatsApp within the hour.",
+      "refLabel": "Booking ref",
+      "paymentNote": "Payment is collected once the reservation is accepted. Until then your dates are held but not charged.",
       "whatsappCta": "Open chat with the team",
       "closeCta": "Done"
     },

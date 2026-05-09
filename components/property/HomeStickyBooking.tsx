@@ -1,19 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { differenceInCalendarDays } from "date-fns";
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/lib/currency/context";
 import { formatPrice } from "@/lib/utils/formatPrice";
-import { calcBookingPricing } from "@/lib/utils/bookingMath";
+import { calcBookingPricing, type BookingPricingResult } from "@/lib/utils/bookingMath";
 import { BookingDialog } from "./BookingDialog";
-import { bookingDeepLink } from "@/lib/hostify/transform";
 import type { Home } from "@/lib/data/types";
 import type { AppLocale } from "@/i18n/routing";
 
-type HomeWithHostify = Home & { hostifyPrimaryId?: number };
+type HostifyQuote = {
+  ok: true;
+  available: boolean;
+  currency: string;
+  nights: number;
+  basePriceUsd: number;
+  cleaningFeeUsd: number;
+  totalUsd: number;
+  basePriceEgp: number;
+  cleaningFeeEgp: number;
+  totalEgp: number;
+};
+
+type QuoteState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "ok"; quote: HostifyQuote }
+  | { kind: "unavailable" }
+  | { kind: "error"; message: string };
 
 function formatISODate(date: Date): string {
   return date.toISOString().split("T")[0] ?? "";
@@ -33,8 +50,9 @@ export function HomeStickyBooking({ home }: { home: Home }) {
   const [checkOut, setCheckOut] = useState<string>(formatISODate(threeNights));
   const [guests, setGuests] = useState<number>(2);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [quoteState, setQuoteState] = useState<QuoteState>({ kind: "idle" });
 
-  const pricing = useMemo(() => {
+  const localPricing = useMemo<BookingPricingResult | null>(() => {
     if (!checkIn || !checkOut) return null;
     const ci = new Date(checkIn);
     const co = new Date(checkOut);
@@ -49,6 +67,64 @@ export function HomeStickyBooking({ home }: { home: Home }) {
       otaPriceEGP: home.pricing.otaPriceEGP,
     });
   }, [checkIn, checkOut, home.pricing]);
+
+  // Fetch real Hostify quote whenever the user changes dates or guests.
+  // Debounced via setTimeout to avoid spamming on input drag.
+  useEffect(() => {
+    if (!localPricing) {
+      setQuoteState({ kind: "idle" });
+      return;
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      setQuoteState({ kind: "loading" });
+      try {
+        const params = new URLSearchParams({
+          slug: home.slug,
+          ci: checkIn,
+          co: checkOut,
+          g: String(guests),
+        });
+        const res = await fetch(`/api/booking/quote?${params}`, {
+          signal: ctrl.signal,
+        });
+        const json = await res.json();
+        if (!res.ok || !json.ok) {
+          if (json?.error === "hostify-not-configured" || json?.error === "home-not-found") {
+            // Fall back silently to local calc
+            setQuoteState({ kind: "idle" });
+            return;
+          }
+          setQuoteState({ kind: "error", message: json?.error || `HTTP ${res.status}` });
+          return;
+        }
+        if (json.available === false) {
+          setQuoteState({ kind: "unavailable" });
+          return;
+        }
+        setQuoteState({ kind: "ok", quote: json as HostifyQuote });
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return;
+        setQuoteState({ kind: "error", message: "network" });
+      }
+    }, 350);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [home.slug, checkIn, checkOut, guests, localPricing]);
+
+  // The "authoritative" pricing surface — Hostify's real quote when we have
+  // it, otherwise the locally-computed estimate.
+  const displayedTotalEGP =
+    quoteState.kind === "ok" ? quoteState.quote.totalEgp : localPricing?.totalEGP ?? 0;
+  const displayedCleaningEGP =
+    quoteState.kind === "ok" ? quoteState.quote.cleaningFeeEgp : localPricing?.cleaningFeeEGP ?? 0;
+  const displayedSubtotalEGP =
+    quoteState.kind === "ok"
+      ? quoteState.quote.basePriceEgp
+      : localPricing?.subtotalEGP ?? 0;
+  const isUnavailable = quoteState.kind === "unavailable";
 
   const labelTone = "text-[10px] uppercase tracking-eyebrow text-navy/55 font-medium";
   const cellClass = "px-4 py-3.5";
@@ -134,38 +210,56 @@ export function HomeStickyBooking({ home }: { home: Home }) {
         </div>
 
         {/* Pricing breakdown */}
-        {pricing ? (
+        {localPricing ? (
           <div className="mt-5 space-y-2 text-sm">
             <Row
-              label={t("subtotal", { nights: pricing.nights })}
-              value={formatPrice(pricing.subtotalEGP, currency, locale)}
+              label={t("subtotal", { nights: localPricing.nights })}
+              value={formatPrice(displayedSubtotalEGP, currency, locale)}
             />
-            {pricing.appliedDiscountKind !== "none" ? (
+            {localPricing.appliedDiscountKind !== "none" && quoteState.kind !== "ok" ? (
               <Row
                 label={
-                  pricing.appliedDiscountKind === "monthly"
+                  localPricing.appliedDiscountKind === "monthly"
                     ? t("monthlyDiscount", { percent: home.pricing.monthlyDiscountPct })
                     : t("weeklyDiscount", { percent: home.pricing.weeklyDiscountPct })
                 }
-                value={`− ${formatPrice(pricing.discountEGP, currency, locale)}`}
+                value={`− ${formatPrice(localPricing.discountEGP, currency, locale)}`}
                 muted
               />
             ) : null}
             <Row
               label={t("cleaningFee")}
-              value={formatPrice(pricing.cleaningFeeEGP, currency, locale)}
+              value={formatPrice(displayedCleaningEGP, currency, locale)}
               muted
             />
             <div className="border-t border-navy/10 pt-3 mt-3 flex items-baseline justify-between font-medium">
               <span>{t("total")}</span>
               <span className="text-base tabular-nums">
-                {formatPrice(pricing.totalEGP, currency, locale)}
+                {quoteState.kind === "loading" ? (
+                  <span className="text-navy/45">…</span>
+                ) : (
+                  formatPrice(displayedTotalEGP, currency, locale)
+                )}
               </span>
             </div>
-            {pricing.savingsVsOtaEGP ? (
+
+            {/* Status pill */}
+            {quoteState.kind === "ok" ? (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-olive/15 ring-1 ring-olive/30 px-3 py-1.5 text-[11px] uppercase tracking-eyebrow text-olive">
+                Available · live quote
+              </p>
+            ) : quoteState.kind === "unavailable" ? (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-maroon/10 ring-1 ring-maroon/30 px-3 py-1.5 text-[11px] uppercase tracking-eyebrow text-maroon">
+                Unavailable for these dates
+              </p>
+            ) : quoteState.kind === "error" ? (
+              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-stone-200 px-3 py-1.5 text-[11px] uppercase tracking-eyebrow text-navy/65">
+                Estimate (live quote unavailable)
+              </p>
+            ) : localPricing.savingsVsOtaEGP ? (
               <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-butter px-3 py-1.5 text-[11px] uppercase tracking-eyebrow text-navy">
                 {t("savesYou", {
-                  amount: formatPrice(pricing.savingsVsOtaEGP, currency, locale),
+                  amount: formatPrice(localPricing.savingsVsOtaEGP, currency, locale),
                 })}
               </p>
             ) : null}
@@ -176,41 +270,16 @@ export function HomeStickyBooking({ home }: { home: Home }) {
 
         {/* CTAs */}
         <div className="mt-6 space-y-2">
-          {(() => {
-            const hostifyId = (home as HomeWithHostify).hostifyPrimaryId;
-            if (hostifyId) {
-              const href = bookingDeepLink({
-                hostifyId,
-                checkIn,
-                checkOut,
-                guests,
-              });
-              return (
-                <Button
-                  asChild
-                  variant="primary"
-                  size="lg"
-                  className="w-full"
-                >
-                  <a href={href} target="_blank" rel="noopener noreferrer">
-                    {t("bookDirect")}
-                  </a>
-                </Button>
-              );
-            }
-            return (
-              <Button
-                type="button"
-                variant="primary"
-                size="lg"
-                className="w-full"
-                disabled={!pricing}
-                onClick={() => setDialogOpen(true)}
-              >
-                {t("bookDirect")}
-              </Button>
-            );
-          })()}
+          <Button
+            type="button"
+            variant="primary"
+            size="lg"
+            className="w-full"
+            disabled={!localPricing || isUnavailable}
+            onClick={() => setDialogOpen(true)}
+          >
+            {t("bookDirect")}
+          </Button>
 
           {whatsappHref ? (
             <Button asChild variant="ghost" size="lg" className="w-full">
@@ -234,7 +303,7 @@ export function HomeStickyBooking({ home }: { home: Home }) {
         <p className="mt-4 text-center text-[11px] text-navy/45">{t("noPaymentNow")}</p>
       </aside>
 
-      {pricing ? (
+      {localPricing ? (
         <BookingDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
@@ -242,7 +311,20 @@ export function HomeStickyBooking({ home }: { home: Home }) {
           checkIn={checkIn}
           checkOut={checkOut}
           guests={guests}
-          pricing={pricing}
+          pricing={
+            quoteState.kind === "ok"
+              ? {
+                  ...localPricing,
+                  subtotalEGP: quoteState.quote.basePriceEgp,
+                  cleaningFeeEGP: quoteState.quote.cleaningFeeEgp,
+                  totalEGP: quoteState.quote.totalEgp,
+                  // We trust Hostify on these — discount is implied in the
+                  // base price they returned, so suppress in the display.
+                  discountEGP: 0,
+                  appliedDiscountKind: "none",
+                }
+              : localPricing
+          }
         />
       ) : null}
     </>
