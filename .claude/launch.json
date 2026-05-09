@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js dev server",
+      "runtimeExecutable": "/Users/rashadreda/Travelholic Website/.tools/run.sh",
+      "runtimeArgs": [
+        "/Users/rashadreda/Travelholic Website/.tools/node/bin/npm",
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "Next.js production server (after build)",
+      "runtimeExecutable": "/Users/rashadreda/Travelholic Website/.tools/run.sh",
+      "runtimeArgs": [
+        "/Users/rashadreda/Travelholic Website/.tools/node/bin/npm",
+        "run",
+        "start"
+      ],
+      "port": 3000
+    }
+  ]
+}

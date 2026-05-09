@@ -5,6 +5,8 @@ import type { AppLocale } from "@/i18n/routing";
 import { Reveal } from "@/components/motion/Reveal";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { FAQAccordion } from "@/components/property/FAQAccordion";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { localBusiness, faqPage } from "@/lib/seo/jsonLd";
 
 type Props = { params: Promise<{ locale: AppLocale }> };
 
@@ -54,6 +56,7 @@ export default async function ContactPage({ params }: Props) {
 
   return (
     <>
+      <JsonLd data={[localBusiness(locale), faqPage(items)]} />
       <section className="bg-stone pt-12 lg:pt-20 pb-10">
         <div className="mx-auto max-w-screen-2xl px-5 sm:px-6 lg:px-8 xl:px-10">
           <Reveal as="header" className="max-w-4xl">

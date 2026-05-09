@@ -709,6 +709,15 @@
     "heroHeadline": "Terms.",
     "phasePlaceholder": "Terms land in Phase 4."
   },
+  "cookies": {
+    "title": "A small note on cookies.",
+    "body": "We use only what's needed to make the site work, plus optional analytics so we can see which pages help guests most. No selling, no surveillance.",
+    "acceptAll": "Accept all",
+    "essentialOnly": "Essential only",
+    "preferences": "Manage preferences",
+    "savedAcceptAll": "Saved — thank you.",
+    "savedEssentialOnly": "Saved — analytics off."
+  },
   "errors": {
     "notFound": {
       "title": "This home is no longer available.",

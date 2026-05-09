@@ -16,6 +16,8 @@ import { HomeNearbyMap } from "@/components/property/HomeNearbyMap";
 import { HomeReviews } from "@/components/property/HomeReviews";
 import { SimilarHomes } from "@/components/property/SimilarHomes";
 import { FAQAccordion } from "@/components/property/FAQAccordion";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { lodgingBusiness, breadcrumbList, faqPage } from "@/lib/seo/jsonLd";
 
 type Props = { params: Promise<{ locale: AppLocale; slug: string }> };
 type FAQItem = { q: string; a: string };
@@ -52,6 +54,24 @@ export default async function HomeDetailPage({ params }: Props) {
 
   return (
     <>
+      <JsonLd
+        data={[
+          lodgingBusiness(home, destination, locale),
+          breadcrumbList(
+            [
+              { name: "Travelholic", href: "/" },
+              { name: "Homes", href: "/homes" },
+              {
+                name: destination?.name[locale] ?? home.destinationSlug,
+                href: `/destinations/${home.destinationSlug}`,
+              },
+              { name: home.title[locale], href: `/homes/${home.slug}` },
+            ],
+            locale,
+          ),
+          faqPage(faqItems),
+        ]}
+      />
       {/* Top: title + gallery */}
       <section className="bg-stone pt-6 pb-10 lg:pb-14">
         <div className="mx-auto max-w-screen-2xl px-5 sm:px-6 lg:px-8 xl:px-10">

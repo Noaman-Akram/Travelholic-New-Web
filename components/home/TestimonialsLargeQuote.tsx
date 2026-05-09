@@ -32,7 +32,11 @@ export function TestimonialsLargeQuote() {
         </Reveal>
 
         <div className="grid grid-cols-12 gap-8 items-center min-h-[42vh]">
-          <blockquote className="col-span-12 lg:col-span-10">
+          <blockquote
+            className="col-span-12 lg:col-span-10"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <AnimatePresence mode="wait">
               <motion.p
                 key={index}

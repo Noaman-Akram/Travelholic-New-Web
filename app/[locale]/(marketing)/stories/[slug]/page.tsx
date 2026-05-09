@@ -11,6 +11,8 @@ import { Reveal } from "@/components/motion/Reveal";
 import { StoryCard } from "@/components/home-card/StoryCard";
 import { StampDivider } from "@/components/brand/StampDivider";
 import { FooterNewsletter } from "@/components/layout/FooterNewsletter";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { blogPosting, breadcrumbList } from "@/lib/seo/jsonLd";
 
 type Props = { params: Promise<{ locale: AppLocale; slug: string }> };
 
@@ -51,6 +53,19 @@ export default async function StoryDetailPage({ params }: Props) {
 
   return (
     <>
+      <JsonLd
+        data={[
+          blogPosting(story, locale),
+          breadcrumbList(
+            [
+              { name: "Travelholic", href: "/" },
+              { name: "Stories", href: "/stories" },
+              { name: story.title[locale], href: `/stories/${story.slug}` },
+            ],
+            locale,
+          ),
+        ]}
+      />
       <article className="bg-stone">
         {/* Header */}
         <header className="mx-auto max-w-3xl px-5 sm:px-6 pt-12 lg:pt-20 pb-10">

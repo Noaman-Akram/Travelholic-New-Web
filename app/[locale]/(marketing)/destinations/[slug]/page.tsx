@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { PropertyCard } from "@/components/home-card/PropertyCard";
 import { DestinationCard } from "@/components/home-card/DestinationCard";
 import { StampDivider } from "@/components/brand/StampDivider";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbList } from "@/lib/seo/jsonLd";
 
 type Props = { params: Promise<{ locale: AppLocale; slug: string }> };
 
@@ -51,6 +53,16 @@ export default async function DestinationDetailPage({ params }: Props) {
 
   return (
     <>
+      <JsonLd
+        data={breadcrumbList(
+          [
+            { name: "Travelholic", href: "/" },
+            { name: "Destinations", href: "/destinations" },
+            { name: destination.name[locale], href: `/destinations/${destination.slug}` },
+          ],
+          locale,
+        )}
+      />
       {/* Hero */}
       <section className="relative h-[80vh] min-h-[520px] overflow-hidden bg-navy text-stone">
         <Image

@@ -122,19 +122,19 @@ export function ContactForm() {
       </div>
 
       <div className="lg:col-span-2 flex items-center justify-between gap-4">
-        {status === "success" ? (
-          <p className="inline-flex items-center gap-2 text-sm text-olive">
-            <Check className="h-4 w-4" />
-            {t("success")}
-          </p>
-        ) : status === "error" ? (
-          <p className="inline-flex items-center gap-2 text-sm text-maroon">
-            <AlertCircle className="h-4 w-4" />
-            {t("error")}
-          </p>
-        ) : (
-          <span />
-        )}
+        <div role="status" aria-live="polite" className="min-h-[1.25rem]">
+          {status === "success" ? (
+            <p className="inline-flex items-center gap-2 text-sm text-olive">
+              <Check className="h-4 w-4" />
+              {t("success")}
+            </p>
+          ) : status === "error" ? (
+            <p className="inline-flex items-center gap-2 text-sm text-maroon">
+              <AlertCircle className="h-4 w-4" />
+              {t("error")}
+            </p>
+          ) : null}
+        </div>
         <button
           type="submit"
           disabled={status === "submitting"}

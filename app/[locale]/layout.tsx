@@ -12,6 +12,8 @@ import type { AppCurrency } from "@/lib/utils/formatPrice";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
+import { CookieConsent } from "@/components/legal/CookieConsent";
+import { Analytics } from "@/components/analytics/Analytics";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
@@ -71,6 +73,7 @@ export async function generateMetadata({
       languages: {
         en: "/en",
         ar: "/ar",
+        "x-default": "/en",
       },
     },
     openGraph: {
@@ -134,6 +137,8 @@ export default async function LocaleLayout({
             </main>
             <Footer locale={locale as AppLocale} />
             <WhatsAppFab />
+            <CookieConsent />
+            <Analytics />
           </CurrencyProvider>
         </NextIntlClientProvider>
       </body>
