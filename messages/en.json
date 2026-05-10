@@ -62,7 +62,7 @@
       "lotus": "Lotus",
       "auc": "AUC",
       "nearCfc": "Near CFC",
-      "ninetiethStreet": "90th Street",
+      "ninetiethStreet": "90 Street",
       "goldenGatesLabel": "Golden Gates",
       "ggBuildings": "GG Buildings",
       "ggVillas": "GG Villas",
@@ -339,7 +339,7 @@
   },
   "destinations": {
     "metaTitle": "Destinations — Travelholic",
-    "metaDescription": "Travelholic homes across New Cairo (Lotus, AUC, Near CFC, 90th Street) and Golden Gates (GG Buildings, GG Villas, Nomads).",
+    "metaDescription": "Travelholic homes across New Cairo (Lotus, AUC, Near CFC, 90 Street) and Golden Gates (GG Buildings, GG Villas, Nomads).",
     "heroEyebrow": "Where we are",
     "heroHeadline": "Two cities, seven addresses.",
     "heroSubline": "From the academic calm of AUC to the airport-side ease of Golden Gates — pick the corner of Cairo that fits the trip.",
@@ -351,7 +351,8 @@
     },
     "mapTitle": "Find us on the map",
     "homesIn": "{count, plural, =1 {1 listing} other {# listings}}",
-    "from": "from"
+    "from": "from",
+    "viewDistrict": "View district"
   },
   "destinationDetail": {
     "metaTitle": "{name} — Travelholic",
