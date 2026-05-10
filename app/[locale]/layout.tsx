@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
+import { ViewTransitions } from "next-view-transitions";
 import "@/app/globals.css";
 import { routing, type AppLocale } from "@/i18n/routing";
 import { CurrencyProvider, CURRENCY_COOKIE } from "@/lib/currency/context";
@@ -14,6 +15,7 @@ import { Footer } from "@/components/layout/Footer";
 import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
 import { CookieConsent } from "@/components/legal/CookieConsent";
 import { Analytics } from "@/components/analytics/Analytics";
+import { Preloader } from "@/components/layout/Preloader";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
@@ -117,31 +119,34 @@ export default async function LocaleLayout({
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
-    <html
-      lang={locale}
-      dir={dir}
-      className={`${inter.variable} ${interAccent.variable} ${interArtistic.variable} ${myriadArabic.variable}`}
-    >
-      <body className="min-h-screen flex flex-col bg-stone text-navy antialiased">
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <CurrencyProvider initial={initialCurrency}>
-            <a
-              href="#main"
-              className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-50 focus:bg-navy focus:text-stone focus:px-4 focus:py-2 focus:rounded-full"
-            >
-              {messages.common && (messages.common as { skipToContent: string }).skipToContent}
-            </a>
-            <Navbar locale={locale as AppLocale} />
-            <main id="main" className="flex-1 pt-16 lg:pt-20">
-              {children}
-            </main>
-            <Footer locale={locale as AppLocale} />
-            <WhatsAppFab />
-            <CookieConsent />
-            <Analytics />
-          </CurrencyProvider>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <ViewTransitions>
+      <html
+        lang={locale}
+        dir={dir}
+        className={`${inter.variable} ${interAccent.variable} ${interArtistic.variable} ${myriadArabic.variable}`}
+      >
+        <body className="min-h-screen flex flex-col bg-stone text-navy antialiased">
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <CurrencyProvider initial={initialCurrency}>
+              <Preloader locale={locale as AppLocale} />
+              <a
+                href="#main"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-50 focus:bg-navy focus:text-stone focus:px-4 focus:py-2 focus:rounded-full"
+              >
+                {messages.common && (messages.common as { skipToContent: string }).skipToContent}
+              </a>
+              <Navbar locale={locale as AppLocale} />
+              <main id="main" className="flex-1 pt-16 lg:pt-20">
+                {children}
+              </main>
+              <Footer locale={locale as AppLocale} />
+              <WhatsAppFab />
+              <CookieConsent />
+              <Analytics />
+            </CurrencyProvider>
+          </NextIntlClientProvider>
+        </body>
+      </html>
+    </ViewTransitions>
   );
 }
