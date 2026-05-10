@@ -719,12 +719,12 @@
       "title": "The fast lanes",
       "whatsappLabel": "WhatsApp",
       "whatsappNote": "Replies in minutes",
-      "phoneLabel": "Phone",
-      "phoneNote": "9 AM – midnight, Cairo time",
+      "phoneLabel": "Phone (24/7)",
+      "phoneNote": "+20 111 222 0844",
       "emailLabel": "Email",
-      "emailNote": "We read every message",
+      "emailNote": "hello@travelholiceg.com",
       "addressLabel": "Office",
-      "addressLine1": "Lotus, New Cairo",
+      "addressLine1": "220B, South Academy, New Cairo",
       "addressLine2": "Cairo, Egypt"
     },
     "faqTitle": "Before you write —"
