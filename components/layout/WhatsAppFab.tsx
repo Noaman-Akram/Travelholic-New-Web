@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { trackWhatsAppClicked } from "@/lib/analytics/track";
 
 // REVIEW: WhatsApp number pending — env var NEXT_PUBLIC_WHATSAPP_NUMBER unset
 // renders aria-disabled until provided.
@@ -45,7 +46,11 @@ export function WhatsAppFab() {
       rel={enabled ? "noopener noreferrer" : undefined}
       aria-label={enabled ? t("fabLabel") : t("disabledLabel")}
       aria-disabled={!enabled || undefined}
-      onClick={enabled ? undefined : (e) => e.preventDefault()}
+      onClick={
+        enabled
+          ? () => trackWhatsAppClicked({ surface: "fab" })
+          : (e) => e.preventDefault()
+      }
       className={cn(
         "fixed end-6 z-30",
         // Mobile: lift above the sticky reserve bar on home detail pages.

@@ -6,6 +6,7 @@ import { Reveal } from "@/components/motion/Reveal";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { subscribeNewsletter } from "@/app/actions/newsletter";
+import { trackNewsletterSubscribed, trackWhatsAppClicked } from "@/lib/analytics/track";
 
 export function ClosingCTA() {
   const t = useTranslations("home.closing");
@@ -18,7 +19,10 @@ export function ClosingCTA() {
     const formData = new FormData(e.currentTarget);
     const result = await subscribeNewsletter(formData);
     setStatus(result.ok ? "success" : "error");
-    if (result.ok) e.currentTarget.reset();
+    if (result.ok) {
+      e.currentTarget.reset();
+      trackNewsletterSubscribed({ surface: "closing-cta" });
+    }
   }
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim();
@@ -48,7 +52,12 @@ export function ClosingCTA() {
           </Button>
           {whatsappHref ? (
             <Button asChild variant="ghost" size="lg" className="border-stone/40 text-stone hover:bg-stone/10">
-              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackWhatsAppClicked({ surface: "closing-cta" })}
+              >
                 {t("secondaryCta")}
               </a>
             </Button>
