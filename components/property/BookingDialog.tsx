@@ -12,8 +12,10 @@ import { formatPrice } from "@/lib/utils/formatPrice";
 import { easeOutExpo } from "@/lib/motion";
 import type { BookingPricingResult } from "@/lib/utils/bookingMath";
 import type { Home } from "@/lib/data/types";
+import { homeHostifyPrimaryId } from "@/lib/data";
 import type { AppLocale } from "@/i18n/routing";
 import { cn } from "@/lib/utils/cn";
+import { trackBookingSubmitted, trackWhatsAppClicked } from "@/lib/analytics/track";
 
 const GuestSchema = z.object({
   firstName: z.string().min(1).max(80),
@@ -140,9 +142,21 @@ export function BookingDialog({
         setSubmitting(false);
         return;
       }
-      setBookingRef(json.ref ?? generateRef(home.slug));
-      setBookingStatus(json.status ?? "lead");
+      const finalRef = json.ref ?? generateRef(home.slug);
+      const finalStatus = json.status ?? "lead";
+      setBookingRef(finalRef);
+      setBookingStatus(finalStatus);
       setStep(3);
+      trackBookingSubmitted({
+        ref: finalRef,
+        homeSlug: home.slug,
+        homeName: home.title.en,
+        hostifyId: homeHostifyPrimaryId(home),
+        nights: pricing.nights,
+        totalEGP: pricing.totalEGP,
+        currency,
+        status: finalStatus,
+      });
     } catch {
       setSubmitError(true);
     } finally {
@@ -415,7 +429,12 @@ export function BookingDialog({
               <>
                 {whatsappHref ? (
                   <Button asChild variant="ghost" size="md">
-                    <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => trackWhatsAppClicked({ surface: "booking-success" })}
+                    >
                       <MessageCircle className="h-4 w-4 me-1.5" />
                       {t("step3.whatsappCta")}
                     </a>

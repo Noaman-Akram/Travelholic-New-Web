@@ -121,7 +121,7 @@ export default async function StoryDetailPage({ params }: Props) {
 
           <Reveal className="mt-16">
             <div className="rounded-3xl bg-stone-100 ring-1 ring-navy/10 p-8 lg:p-10">
-              <FooterNewsletter />
+              <FooterNewsletter surface="story" />
             </div>
           </Reveal>
         </div>
