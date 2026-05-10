@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -9,9 +10,15 @@ import { cn } from "@/lib/utils/cn";
 // renders aria-disabled until provided.
 export function WhatsAppFab() {
   const t = useTranslations("whatsapp");
+  const pathname = usePathname();
   const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim();
   const enabled = Boolean(number);
   const [pulsed, setPulsed] = useState(false);
+
+  // On the home detail page (mobile), a sticky bottom-bar with the Reserve
+  // button lives at bottom-0; lift the FAB above it so it doesn't cover
+  // the CTA. Desktop has a side-rail widget, no overlap there.
+  const isHomeDetail = /\/homes\/[^/]+(?:\/|$)/.test(pathname);
 
   // Pulse once on first scroll, then never again.
   useEffect(() => {
@@ -40,10 +47,12 @@ export function WhatsAppFab() {
       aria-disabled={!enabled || undefined}
       onClick={enabled ? undefined : (e) => e.preventDefault()}
       className={cn(
-        "fixed bottom-6 end-6 z-30",
+        "fixed end-6 z-30",
+        // Mobile: lift above the sticky reserve bar on home detail pages.
+        isHomeDetail ? "bottom-24 lg:bottom-6" : "bottom-6",
         "inline-flex items-center justify-center",
         "h-14 w-14 rounded-full shadow-editorial-lg",
-        "bg-navy text-stone transition-transform duration-300 ease-out-expo",
+        "bg-navy text-stone transition-all duration-300 ease-out-expo",
         enabled ? "hover:scale-110 active:scale-95" : "opacity-60 cursor-not-allowed",
         !pulsed && enabled && "motion-safe:animate-pulse-soft",
       )}

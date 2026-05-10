@@ -37,15 +37,9 @@ const TAG_TO_DESTINATION: Record<string, string> = {
 
 const PARENT_AREAS = new Set(["golden-gates", "new-cairo"]);
 
-const EGP_PER_USD = (() => {
-  const raw = process.env.NEXT_PUBLIC_EGP_PER_USD;
-  if (!raw) return 50;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : 50;
-})();
-
-function usdToEgp(usd: number | null | undefined): number {
-  return Math.max(0, Math.round((usd ?? 0) * EGP_PER_USD));
+function makeUsdToEgp(rate: number) {
+  return (usd: number | null | undefined): number =>
+    Math.max(0, Math.round((usd ?? 0) * rate));
 }
 
 function normalizeTags(raw: unknown): string[] {
@@ -205,7 +199,11 @@ const FALLBACK_AMENITIES: AmenityKey[] = [
  * `hostifyId` (used for deep-linking to book.travelholiceg.com); the full set
  * of unit IDs is preserved in `hostifyIds`.
  */
-export function groupAndTransform(listings: HostifyListingSummary[]): Home[] {
+export function groupAndTransform(
+  listings: HostifyListingSummary[],
+  egpPerUsd: number,
+): Home[] {
+  const usdToEgp = makeUsdToEgp(egpPerUsd);
   const groups = new Map<string, HostifyListingSummary[]>();
   for (const l of listings) {
     const slug = makeHomeSlug(l.name ?? `listing-${l.id}`);
@@ -218,7 +216,7 @@ export function groupAndTransform(listings: HostifyListingSummary[]): Home[] {
   for (const [slug, group] of groups) {
     const head = group[0];
     if (!head) continue;
-    const home = transformSummary(head, group, slug);
+    const home = transformSummary(head, group, slug, usdToEgp);
     if (home.destinationSlug === "unassigned") {
       if (process.env.NODE_ENV !== "production") {
         // eslint-disable-next-line no-console
@@ -240,6 +238,7 @@ function transformSummary(
   head: HostifyListingSummary,
   group: HostifyListingSummary[],
   slug: string,
+  usdToEgp: (usd: number | null | undefined) => number,
 ): Home {
   const cleanName = cleanTitle(head.name ?? "Travelholic home");
   const destinationSlug = resolveDestinationSlug(
