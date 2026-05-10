@@ -13,7 +13,7 @@ export const areas: Area[] = [
   },
   {
     slug: "golden-gates",
-    name: { en: "Golden Gates", ar: "البوابات الذهبية" },
+    name: { en: "Golden Gates", ar: "جولدن جاتس" },
     blurb: {
       en: "On the Mokattam–Nasr City corridor — close to the airport, ten minutes from downtown.",
       ar: "على محور المقطم – مدينة نصر — قريب من المطار، عشر دقائق من وسط البلد.",
@@ -85,7 +85,7 @@ export const destinations: Destination[] = [
   },
   {
     slug: "ninetieth-street",
-    name: { en: "90th Street", ar: "شارع التسعين" },
+    name: { en: "90 Street", ar: "شارع التسعين" },
     area: "new-cairo",
     areaName: { en: "New Cairo", ar: "القاهرة الجديدة" },
     shortPitch: {
@@ -93,7 +93,7 @@ export const destinations: Destination[] = [
       ar: "العمود التجاري للقاهرة الجديدة — أبراج راقية، أفضل المطاعم، وأسرع وصول للمدينة.",
     },
     longDescription: {
-      en: "90th Street is where New Cairo works. Our homes on the avenue and a block off it sit inside the newer towers — high floors, double-glazed windows that take the avenue's noise out, and views that reach all the way to the eastern desert.",
+      en: "90 Street is where New Cairo works. Our homes on the avenue and a block off it sit inside the newer towers — high floors, double-glazed windows that take the avenue's noise out, and views that reach all the way to the eastern desert.",
       ar: "شارع التسعين هو المكان الذي تعمل فيه القاهرة الجديدة. بيوتنا على الشارع وعلى بُعد بلوك منه داخل الأبراج الأحدث — طوابق عالية، نوافذ مزدوجة تخفّ من ضجيج الشارع، وإطلالات تمتدّ حتى الصحراء الشرقية.",
     },
     heroImage: "https://picsum.photos/seed/th-90th/1920/1080",
@@ -106,16 +106,16 @@ export const destinations: Destination[] = [
   // ─── Golden Gates ───────────────────────────────────────────────────────
   {
     slug: "gg-buildings",
-    name: { en: "GG Buildings", ar: "عمارات البوابات الذهبية" },
+    name: { en: "GG Buildings", ar: "عمارات جولدن جاتس" },
     area: "golden-gates",
-    areaName: { en: "Golden Gates", ar: "البوابات الذهبية" },
+    areaName: { en: "Golden Gates", ar: "جولدن جاتس" },
     shortPitch: {
       en: "Apartment buildings inside the Golden Gates compound — quiet, secure, and a short hop to the airport.",
-      ar: "عمارات سكنية داخل كومباوند البوابات الذهبية — هادئة وآمنة وعلى بُعد قصير من المطار.",
+      ar: "عمارات سكنية داخل كومباوند جولدن جاتس — هادئة وآمنة وعلى بُعد قصير من المطار.",
     },
     longDescription: {
       en: "Fifteen listings across a handful of mid-rise buildings inside Golden Gates. Studios up to 2-bedrooms, all with the same compound amenities — pool, gym, 24/7 security — and an in-house concierge who handles airport pickups.",
-      ar: "خمسة عشر بيتًا في عدد من العمارات متوسّطة الارتفاع داخل البوابات الذهبية. من الاستوديوهات إلى الغرفتين، جميعها بنفس مرافق الكومباوند — حمّام سباحة، جيم، أمن على مدار الساعة — وكونسيرج داخلي يتكفّل بالاستقبال من المطار.",
+      ar: "خمسة عشر بيتًا في عدد من العمارات متوسّطة الارتفاع داخل جولدن جاتس. من الاستوديوهات إلى الغرفتين، جميعها بنفس مرافق الكومباوند — حمّام سباحة، جيم، أمن على مدار الساعة — وكونسيرج داخلي يتكفّل بالاستقبال من المطار.",
     },
     heroImage: "https://picsum.photos/seed/th-gg-buildings/1920/1080",
     thumbnail: "https://picsum.photos/seed/th-gg-buildings/800/600",
@@ -126,12 +126,12 @@ export const destinations: Destination[] = [
   },
   {
     slug: "gg-villas",
-    name: { en: "GG Villas", ar: "فيلات البوابات الذهبية" },
+    name: { en: "GG Villas", ar: "فيلات جولدن جاتس" },
     area: "golden-gates",
-    areaName: { en: "Golden Gates", ar: "البوابات الذهبية" },
+    areaName: { en: "Golden Gates", ar: "جولدن جاتس" },
     shortPitch: {
       en: "Two standalone villas inside Golden Gates — private gardens, bigger groups, slower stays.",
-      ar: "فيلتان مستقلّتان داخل البوابات الذهبية — حدائق خاصة، مجموعات أكبر، وإقامات أبطأ.",
+      ar: "فيلتان مستقلّتان داخل جولدن جاتس — حدائق خاصة، مجموعات أكبر، وإقامات أبطأ.",
     },
     longDescription: {
       en: "Two villas only — small enough that we know each one by its quirks. Private gardens, three to four bedrooms, kitchens that take a real dinner party, and a quiet cul-de-sac that stays cool into the evening.",
@@ -148,14 +148,14 @@ export const destinations: Destination[] = [
     slug: "nomads",
     name: { en: "Nomads", ar: "نومادز" },
     area: "golden-gates",
-    areaName: { en: "Golden Gates", ar: "البوابات الذهبية" },
+    areaName: { en: "Golden Gates", ar: "جولدن جاتس" },
     shortPitch: {
       en: "A long-stay project for remote workers and slow travelers — co-living energy, private apartments.",
       ar: "مشروع للإقامات الطويلة للعاملين عن بُعد ومسافري الإقامة الطويلة — طاقة كو-ليفينج بشقق خاصة.",
     },
     longDescription: {
       en: "Nomads is the sister project of GG Buildings — same compound, different proposition. Built for guests staying a month or longer: lounge spaces, a quiet co-working floor, monthly rates that work, and a community that doesn't ask too much of you.",
-      ar: "نومادز هو المشروع الشقيق لعمارات البوابات الذهبية — نفس الكومباوند، وعرض مختلف. مبني للضيوف الذين يقيمون شهرًا فأكثر: قاعات لاونج، طابق كو-ووركينغ هادئ، أسعار شهرية تعمل، ومجتمع لا يطلب منك الكثير.",
+      ar: "نومادز هو المشروع الشقيق لعمارات جولدن جاتس — نفس الكومباوند، وعرض مختلف. مبني للضيوف الذين يقيمون شهرًا فأكثر: قاعات لاونج، طابق كو-ووركينغ هادئ، أسعار شهرية تعمل، ومجتمع لا يطلب منك الكثير.",
     },
     heroImage: "https://picsum.photos/seed/th-nomads/1920/1080",
     thumbnail: "https://picsum.photos/seed/th-nomads/800/600",
