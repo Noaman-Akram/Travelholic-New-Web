@@ -125,7 +125,25 @@ WhatsApp is a secondary CTA throughout — not a primary booking path. The OTA l
 
 ## Cookie consent + analytics
 
-Custom on-tone banner in [`components/legal/CookieConsent.tsx`](components/legal/CookieConsent.tsx). Stores choice (`all` | `essential`) in `TH_CONSENT` cookie. Analytics scripts (Google Analytics + Meta Pixel) only inject after the user accepts non-essential cookies — see [`components/analytics/Analytics.tsx`](components/analytics/Analytics.tsx). Set `NEXT_PUBLIC_GA_ID` and `NEXT_PUBLIC_META_PIXEL_ID` to enable.
+Custom on-tone banner in [`components/legal/CookieConsent.tsx`](components/legal/CookieConsent.tsx). Stores choice (`all` | `essential`) in `TH_CONSENT` cookie. **No third-party scripts inject until the user clicks "Accept all"** — see [`components/analytics/Analytics.tsx`](components/analytics/Analytics.tsx).
+
+Supported (all `NEXT_PUBLIC_*`, all optional — leave blank to disable):
+
+| Var | What | Where to find |
+|---|---|---|
+| `NEXT_PUBLIC_GA_ID` | GA4 Measurement ID `G-XXXXXXXXXX` (not the Property ID) | GA4 → Admin → Data Streams → Web stream → "Measurement ID" |
+| `NEXT_PUBLIC_META_PIXEL_ID` | Meta Pixel ID (15–16 digits) | Meta Events Manager → Pixel → Settings |
+| `NEXT_PUBLIC_GOOGLE_ADS_ID` | Google Ads ID `AW-XXXXXXXXXX` | Google Ads → Tools → Conversions → Tag setup → "Install the tag yourself" |
+| `NEXT_PUBLIC_GOOGLE_ADS_BOOKING_LABEL` | Conversion label for the "Booking submitted" action | Same panel, per conversion action |
+
+Conversion events fire from [`lib/analytics/track.ts`](lib/analytics/track.ts) on:
+- `purchase` (GA4) + `Purchase` (Pixel) + Ads conversion — booking submitted
+- `begin_checkout` + `InitiateCheckout` — "Book direct" button opens dialog
+- `generate_lead` + `Lead` — contact form submitted
+- `sign_up` + `Subscribe` — newsletter signup
+- `whatsapp_click` + `Contact` — any WhatsApp CTA clicked
+
+SPA route changes also fire `page_view` / `PageView` so client-side navigation isn't underreported.
 
 ## Local development
 
@@ -151,8 +169,12 @@ Copy `.env.example` to `.env.local` and fill in:
 NEXT_PUBLIC_SITE_URL=https://travelholic.example
 NEXT_PUBLIC_DEFAULT_LOCALE=en
 NEXT_PUBLIC_WHATSAPP_NUMBER=20XXXXXXXXXX     # WhatsApp number (no leading +)
-NEXT_PUBLIC_GA_ID=                           # Google Analytics — optional
-NEXT_PUBLIC_META_PIXEL_ID=                   # Meta Pixel — optional
+NEXT_PUBLIC_GA_ID=                           # GA4 Measurement ID G-XXXXXXXXXX
+NEXT_PUBLIC_META_PIXEL_ID=                   # Meta Pixel ID (15–16 digits)
+NEXT_PUBLIC_GOOGLE_ADS_ID=                   # Google Ads ID AW-XXXXXXXXXX
+NEXT_PUBLIC_GOOGLE_ADS_BOOKING_LABEL=        # Conversion label for "Booking submitted"
+HOSTIFY_API_KEY=                             # Hostify PMS API key
+NEXT_PUBLIC_EGP_PER_USD=50                   # FX fallback when Hostify is in USD
 BOOKING_WEBHOOK_URL=                         # POST target for booking leads
 NEWSLETTER_API_KEY=                          # Newsletter provider key
 NEWSLETTER_LIST_ID=                          # Newsletter list ID
@@ -165,7 +187,7 @@ Until `NEXT_PUBLIC_WHATSAPP_NUMBER` is set, the WhatsApp FAB and "Reserve via Wh
 1. Push the project to a git remote (GitHub / GitLab / Bitbucket).
 2. In the Vercel dashboard, create a new project and import the repo.
 3. Build settings: Vercel auto-detects Next.js — defaults work. Output directory is `.next`. Install command: `npm install`. Build command: `next build`.
-4. Set environment variables (see above). At minimum, `NEXT_PUBLIC_SITE_URL` should be the production domain.
+4. Set environment variables (see above). At minimum, `NEXT_PUBLIC_SITE_URL` should be the production domain. **All `NEXT_PUBLIC_*` vars are baked into the client bundle at build time** — set them in Vercel before the first build, across all three environments (Production + Preview + Development). Changing them after a deploy requires a redeploy from the Deployments tab.
 5. Add the production domain in **Settings → Domains**.
 6. After the first deploy, verify in production:
    - Both locales (`/en` and `/ar`) load with the right `<html dir>`.

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Send, Check, AlertCircle } from "lucide-react";
 import { submitContact } from "@/app/actions/contact";
 import { cn } from "@/lib/utils/cn";
+import { trackContactSubmitted } from "@/lib/analytics/track";
 
 export function ContactForm() {
   const t = useTranslations("contact.form");
@@ -16,10 +17,12 @@ export function ContactForm() {
     setStatus("submitting");
     setFieldErrors({});
     const formData = new FormData(e.currentTarget);
+    const intent = String(formData.get("intent") ?? "");
     const result = await submitContact(formData);
     if (result.ok) {
       setStatus("success");
       e.currentTarget.reset();
+      trackContactSubmitted({ intent });
     } else {
       setStatus("error");
       if (result.fieldErrors) setFieldErrors(result.fieldErrors as Record<string, string>);

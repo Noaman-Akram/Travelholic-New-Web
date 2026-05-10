@@ -3,6 +3,7 @@ import { z } from "zod";
 import { hostify, HOSTIFY_AVAILABLE, HostifyError } from "@/lib/hostify/client";
 import { getHomeBySlug } from "@/lib/data/server";
 import { homeHostifyPrimaryId } from "@/lib/data";
+import { egpToUsd } from "@/lib/fx/rates";
 
 // Booking status to create in Hostify. "pending" = host accepts manually
 // (typical when payment is collected outside Hostify or via a follow-up
@@ -36,13 +37,6 @@ const BookingSchema = z.object({
   source: z.literal("direct-website"),
   timestamp: z.string(),
 });
-
-const EGP_PER_USD = (() => {
-  const raw = process.env.NEXT_PUBLIC_EGP_PER_USD;
-  if (!raw) return 50;
-  const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : 50;
-})();
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -83,10 +77,11 @@ export async function POST(req: NextRequest) {
         hostifyResult = { ok: false, error: "no-hostify-listing" };
       } else {
         // Hostify expects total_price in the listing's currency. Travelholic
-        // listings are in USD; convert the EGP total back to USD here.
+        // listings are in USD; convert the EGP total back to USD using the
+        // live FX rate.
         const totalUsd =
           data.pricing.currency === "EGP"
-            ? data.pricing.totalEGP / EGP_PER_USD
+            ? await egpToUsd(data.pricing.totalEGP)
             : data.pricing.totalEGP;
 
         const guest = data.guest;

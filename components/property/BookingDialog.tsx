@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import * as Dialog from "@radix-ui/react-dialog";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { X, ArrowRight, ArrowLeft, Check, MessageCircle } from "lucide-react";
+import { X, ArrowRight, ArrowLeft, Loader2, Lock, MessageCircle } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/lib/currency/context";
 import { formatPrice } from "@/lib/utils/formatPrice";
-import { easeOutExpo } from "@/lib/motion";
 import type { BookingPricingResult } from "@/lib/utils/bookingMath";
 import type { Home } from "@/lib/data/types";
 import type { AppLocale } from "@/i18n/routing";
@@ -26,14 +24,7 @@ const GuestSchema = z.object({
 });
 
 type Step = 1 | 2 | 3;
-type GuestData = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  country: string;
-  specialRequests: string;
-};
+type GuestData = z.infer<typeof GuestSchema>;
 
 export function BookingDialog({
   open,
@@ -55,30 +46,30 @@ export function BookingDialog({
   const t = useTranslations("bookingDialog");
   const locale = useLocale() as AppLocale;
   const { currency } = useCurrency();
-  const prefersReduced = useReducedMotion();
 
   const [step, setStep] = useState<Step>(1);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState(false);
-  const [bookingRef, setBookingRef] = useState<string>("");
-  const [bookingStatus, setBookingStatus] = useState<"lead" | "pending" | "accepted">("lead");
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof GuestData | "agreeTerms", boolean>>>({});
+  const [validatedGuest, setValidatedGuest] = useState<GuestData | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof GuestData, boolean>>
+  >({});
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState(false);
 
   const handleClose = (next: boolean) => {
     onOpenChange(next);
     if (!next) {
-      // Reset on close
+      // Reset on close so a fresh open starts at step 1.
       setTimeout(() => {
         setStep(1);
-        setSubmitError(false);
+        setValidatedGuest(null);
         setFieldErrors({});
+        setPaymentError(false);
+        setPaymentLoading(false);
       }, 250);
     }
   };
 
-  async function handleSubmit(formData: FormData) {
-    setSubmitting(true);
-    setSubmitError(false);
+  function handleStep2Submit(formData: FormData) {
     setFieldErrors({});
 
     const raw = {
@@ -101,12 +92,20 @@ export function BookingDialog({
         country: !!flat.country,
         agreeTerms: !!flat.agreeTerms,
       });
-      setSubmitting(false);
       return;
     }
 
+    setValidatedGuest(parsed.data);
+    setStep(3);
+  }
+
+  async function handlePay() {
+    if (!validatedGuest) return;
+    setPaymentLoading(true);
+    setPaymentError(false);
+
     try {
-      const res = await fetch("/api/booking", {
+      const res = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,68 +114,50 @@ export function BookingDialog({
           checkOut,
           nights: pricing.nights,
           guests,
-          guest: parsed.data,
+          guest: validatedGuest,
           pricing: {
             subtotalEGP: pricing.subtotalEGP,
             discountEGP: pricing.discountEGP,
             cleaningFeeEGP: pricing.cleaningFeeEGP,
             totalEGP: pricing.totalEGP,
-            currency,
           },
           locale,
-          source: "direct-website",
-          timestamp: new Date().toISOString(),
         }),
       });
       const json = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
-        ref?: string;
-        status?: "lead" | "pending" | "accepted";
-        hostifyReservationId?: number;
+        paymentUrl?: string;
+        merchantOrderId?: string;
         error?: string;
       };
-      if (!res.ok || !json.ok) {
-        setSubmitError(true);
-        setSubmitting(false);
+
+      if (!res.ok || !json.ok || !json.paymentUrl) {
+        setPaymentError(true);
+        setPaymentLoading(false);
         return;
       }
-      setBookingRef(json.ref ?? generateRef(home.slug));
-      setBookingStatus(json.status ?? "lead");
-      setStep(3);
+
+      // Redirect to SuperPay's hosted page. The user returns to
+      // /booking/success?ref=<merchantOrderId> after paying.
+      window.location.href = json.paymentUrl;
     } catch {
-      setSubmitError(true);
-    } finally {
-      setSubmitting(false);
+      setPaymentError(true);
+      setPaymentLoading(false);
     }
   }
 
   const total = formatPrice(pricing.totalEGP, currency, locale);
+  const totalEgp = formatPrice(pricing.totalEGP, "EGP", locale);
   const savings = pricing.savingsVsOtaEGP
     ? formatPrice(pricing.savingsVsOtaEGP, currency, locale)
     : null;
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim();
-  const whatsappHref = whatsappNumber && bookingRef
+  const whatsappHref = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        t("whatsappPrefill", {
-          home: home.title[locale],
-          checkIn,
-          checkOut,
-          guests,
-          total,
-          ref: bookingRef,
-        }),
+        `Hi Travelholic — I'm reserving ${home.title[locale]} (${checkIn} → ${checkOut}, ${guests} guests). Need help finalising payment.`,
       )}`
     : undefined;
-
-  const motionProps = prefersReduced
-    ? {}
-    : {
-        initial: { opacity: 0, x: 20 },
-        animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -20 },
-        transition: { duration: 0.3, ease: easeOutExpo },
-      };
 
   return (
     <Dialog.Root open={open} onOpenChange={handleClose}>
@@ -186,10 +167,18 @@ export function BookingDialog({
           <header className="flex items-center justify-between p-5 sm:p-6 border-b border-navy/10">
             <div>
               <p className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55">
-                {step === 1 ? t("step1.eyebrow") : step === 2 ? t("step2.eyebrow") : t("step3.eyebrow")}
+                {step === 1
+                  ? t("step1.eyebrow")
+                  : step === 2
+                  ? t("step2.eyebrow")
+                  : t("payment.step")}
               </p>
               <Dialog.Title className="mt-1 text-h4-mobile lg:text-h4 font-medium leading-tight">
-                {step === 1 ? t("step1.title") : step === 2 ? t("step2.title") : t("step3.title")}
+                {step === 1
+                  ? t("step1.title")
+                  : step === 2
+                  ? t("step2.title")
+                  : t("payment.title")}
               </Dialog.Title>
             </div>
             <Dialog.Close asChild>
@@ -204,9 +193,8 @@ export function BookingDialog({
           </header>
 
           <div className="flex-1 overflow-y-auto">
-            <AnimatePresence mode="wait">
-              {step === 1 ? (
-                <motion.div key="step1" {...motionProps} className="p-5 sm:p-7">
+            {step === 1 ? (
+              <div key="step1" className="p-5 sm:p-7">
                   <div className="rounded-2xl bg-stone-100 ring-1 ring-navy/10 p-5 mb-6">
                     <div className="flex items-center gap-4">
                       <div
@@ -272,18 +260,17 @@ export function BookingDialog({
                       </p>
                     ) : null}
                   </div>
-                </motion.div>
-              ) : step === 2 ? (
-                <motion.form
-                  key="step2"
-                  {...motionProps}
-                  id="bk-step2-form"
-                  className="p-5 sm:p-7"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSubmit(new FormData(e.currentTarget));
-                  }}
-                >
+              </div>
+            ) : step === 2 ? (
+              <form
+                key="step2"
+                id="bk-step2-form"
+                className="p-5 sm:p-7"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleStep2Submit(new FormData(e.currentTarget));
+                }}
+              >
                   <p className="text-sm text-navy/70 mb-6 max-w-xl">{t("step2.subtitle")}</p>
                   <div className="grid grid-cols-2 gap-4 gap-y-5">
                     <Field
@@ -291,6 +278,7 @@ export function BookingDialog({
                       name="firstName"
                       required
                       autoComplete="given-name"
+                      defaultValue={validatedGuest?.firstName ?? ""}
                       error={fieldErrors.firstName ? t("step2.errors.firstName") : undefined}
                     />
                     <Field
@@ -298,6 +286,7 @@ export function BookingDialog({
                       name="lastName"
                       required
                       autoComplete="family-name"
+                      defaultValue={validatedGuest?.lastName ?? ""}
                       error={fieldErrors.lastName ? t("step2.errors.lastName") : undefined}
                     />
                     <Field
@@ -307,6 +296,7 @@ export function BookingDialog({
                       required
                       className="col-span-2"
                       autoComplete="email"
+                      defaultValue={validatedGuest?.email ?? ""}
                       error={fieldErrors.email ? t("step2.errors.email") : undefined}
                     />
                     <Field
@@ -315,6 +305,7 @@ export function BookingDialog({
                       type="tel"
                       required
                       autoComplete="tel"
+                      defaultValue={validatedGuest?.phone ?? ""}
                       error={fieldErrors.phone ? t("step2.errors.phone") : undefined}
                     />
                     <Field
@@ -323,6 +314,7 @@ export function BookingDialog({
                       required
                       autoComplete="country-name"
                       placeholder={t("step2.countryPlaceholder")}
+                      defaultValue={validatedGuest?.country ?? ""}
                       error={fieldErrors.country ? t("step2.errors.country") : undefined}
                     />
                     <Field
@@ -331,6 +323,7 @@ export function BookingDialog({
                       multiline
                       className="col-span-2"
                       placeholder={t("step2.specialRequestsPlaceholder")}
+                      defaultValue={validatedGuest?.specialRequests ?? ""}
                     />
                   </div>
 
@@ -339,6 +332,7 @@ export function BookingDialog({
                       type="checkbox"
                       name="agreeTerms"
                       required
+                      defaultChecked={!!validatedGuest}
                       className="mt-1 h-4 w-4 accent-navy"
                     />
                     <span className="text-navy/80">{t("step2.terms")}</span>
@@ -346,35 +340,49 @@ export function BookingDialog({
                   {fieldErrors.agreeTerms ? (
                     <p className="mt-2 text-xs text-maroon">{t("step2.errors.terms")}</p>
                   ) : null}
+              </form>
+            ) : (
+              <div key="step3" className="p-5 sm:p-7">
+                  <p className="text-body text-navy/75 max-w-xl">{t("payment.intro")}</p>
 
-                  {submitError ? (
-                    <p className="mt-4 text-sm text-maroon">{t("errors.submit")}</p>
-                  ) : null}
-                </motion.form>
-              ) : (
-                <motion.div key="step3" {...motionProps} className="p-5 sm:p-7 text-center">
-                  <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-butter mt-4 mb-6">
-                    <Check className="h-7 w-7 text-navy" />
+                  <div className="mt-6 rounded-2xl bg-stone-100 ring-1 ring-navy/10 p-5">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="h-14 w-18 rounded-xl bg-navy/10 bg-cover bg-center shrink-0"
+                        style={{ backgroundImage: `url(${home.gallery[0]?.src ?? ""})` }}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium leading-tight truncate">
+                          {home.title[locale]}
+                        </p>
+                        <p className="text-xs text-navy/55 mt-0.5">
+                          {checkIn} → {checkOut} · {guests} {guests === 1 ? "guest" : "guests"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-5 pt-4 border-t border-navy/10 flex items-baseline justify-between">
+                      <span className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55">
+                        {t("payment.summary")}
+                      </span>
+                      <span className="text-h4-mobile lg:text-h4 font-medium tabular-nums">
+                        {totalEgp}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-xs text-navy/55">{t("payment.currencyNote")}</p>
                   </div>
-                  <p className="mx-auto max-w-md text-body-lg leading-relaxed text-navy/80 text-pretty">
-                    {bookingStatus === "pending"
-                      ? t("step3.subtitlePending")
-                      : t("step3.subtitle")}
+
+                  <p className="mt-5 inline-flex items-center gap-2 text-xs text-navy/65">
+                    <Lock className="h-3.5 w-3.5" />
+                    {t("payment.cardSecure")}
                   </p>
-                  {bookingRef ? (
-                    <p className="mt-6 inline-flex items-baseline gap-2 rounded-full bg-stone-100 px-4 py-1.5 text-xs uppercase tracking-eyebrow text-navy/65">
-                      <span className="text-navy/45">{t("step3.refLabel")}</span>
-                      <span className="font-mono text-navy">{bookingRef}</span>
-                    </p>
+
+                  {paymentError ? (
+                    <div className="mt-5 rounded-2xl bg-maroon/5 ring-1 ring-maroon/30 px-4 py-3 text-sm text-maroon">
+                      {t("payment.errors.create")}
+                    </div>
                   ) : null}
-                  {bookingStatus === "pending" ? (
-                    <p className="mt-4 mx-auto max-w-md text-xs text-navy/55">
-                      {t("step3.paymentNote")}
-                    </p>
-                  ) : null}
-                </motion.div>
-              )}
-            </AnimatePresence>
+              </div>
+            )}
           </div>
 
           <footer className="flex items-center justify-between gap-3 p-5 sm:p-6 border-t border-navy/10 bg-stone-100">
@@ -405,32 +413,62 @@ export function BookingDialog({
                 <button
                   type="submit"
                   form="bk-step2-form"
-                  disabled={submitting}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-navy text-stone h-11 px-6 text-sm font-medium transition-colors hover:bg-navy-700 disabled:opacity-60"
                 >
-                  {submitting ? "…" : t("step2.reserve")}
+                  {t("step2.reserve")}
+                  <ArrowRight className="h-4 w-4 rtl:scale-x-[-1]" />
                 </button>
               </>
             ) : (
               <>
-                {whatsappHref ? (
-                  <Button asChild variant="ghost" size="md">
-                    <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-                      <MessageCircle className="h-4 w-4 me-1.5" />
-                      {t("step3.whatsappCta")}
-                    </a>
-                  </Button>
-                ) : (
-                  <span />
-                )}
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="ghost"
                   size="md"
-                  onClick={() => handleClose(false)}
+                  onClick={() => setStep(2)}
+                  disabled={paymentLoading}
                 >
-                  {t("step3.closeCta")}
+                  <ArrowLeft className="h-4 w-4 me-1 rtl:scale-x-[-1]" />
+                  {t("step2.back")}
                 </Button>
+                <div className="flex items-center gap-2">
+                  {whatsappHref ? (
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="md"
+                      className="hidden sm:inline-flex"
+                    >
+                      <a
+                        href={whatsappHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Reserve via WhatsApp"
+                      >
+                        <MessageCircle className="h-4 w-4 me-1.5" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={handlePay}
+                    disabled={paymentLoading}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-navy text-stone h-11 px-6 text-sm font-medium transition-colors hover:bg-navy-700 disabled:opacity-60"
+                  >
+                    {paymentLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
+                        {t("payment.redirecting")}
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4" />
+                        {t("payment.primaryCta")}
+                      </>
+                    )}
+                  </button>
+                </div>
               </>
             )}
           </footer>
@@ -438,15 +476,6 @@ export function BookingDialog({
       </Dialog.Portal>
     </Dialog.Root>
   );
-}
-
-function generateRef(slug: string): string {
-  const ts = Date.now().toString(36).toUpperCase().slice(-5);
-  const slugSig = slug
-    .replace(/[^a-z0-9]/gi, "")
-    .slice(0, 4)
-    .toUpperCase();
-  return `TH-${slugSig}-${ts}`;
 }
 
 function Row({
@@ -475,6 +504,7 @@ function Field({
   multiline = false,
   className,
   placeholder,
+  defaultValue,
   error,
 }: {
   label: string;
@@ -485,6 +515,7 @@ function Field({
   multiline?: boolean;
   className?: string;
   placeholder?: string;
+  defaultValue?: string;
   error?: string;
 }) {
   const inputClass =
@@ -500,6 +531,7 @@ function Field({
           rows={3}
           required={required}
           placeholder={placeholder}
+          defaultValue={defaultValue}
           className={`${inputClass} resize-none`}
         />
       ) : (
@@ -509,6 +541,7 @@ function Field({
           required={required}
           autoComplete={autoComplete}
           placeholder={placeholder}
+          defaultValue={defaultValue}
           className={inputClass}
         />
       )}

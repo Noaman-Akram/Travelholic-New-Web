@@ -2,6 +2,7 @@ import "server-only";
 
 import { hostify, HOSTIFY_AVAILABLE, HostifyError } from "./client";
 import { groupAndTransform, enrichWithFullListing } from "./transform";
+import { getEgpPerUsd } from "@/lib/fx/rates";
 import type { Home } from "@/lib/data/types";
 
 type HomeWithHostify = Home & {
@@ -18,9 +19,12 @@ type HomeWithHostify = Home & {
 export async function fetchHostifyHomes(): Promise<Home[]> {
   if (!HOSTIFY_AVAILABLE()) return [];
   try {
-    const listings = await hostify.listAllListings();
+    const [listings, fx] = await Promise.all([
+      hostify.listAllListings(),
+      getEgpPerUsd(),
+    ]);
     if (listings.length === 0) return [];
-    return groupAndTransform(listings);
+    return groupAndTransform(listings, fx.rate);
   } catch (err) {
     if (process.env.NODE_ENV !== "production") {
       // eslint-disable-next-line no-console
