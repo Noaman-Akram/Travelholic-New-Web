@@ -35,6 +35,15 @@ type GuestData = {
   specialRequests: string;
 };
 
+type PaymentIframeResponse = {
+  ok?: boolean;
+  url?: string;
+  merchantOrderId?: string;
+  amount?: string;
+  currency?: "EGP";
+  error?: string;
+};
+
 export function BookingDialog({
   open,
   onOpenChange,
@@ -61,7 +70,9 @@ export function BookingDialog({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
   const [bookingRef, setBookingRef] = useState<string>("");
-  const [bookingStatus, setBookingStatus] = useState<"lead" | "pending" | "accepted">("lead");
+  const [bookingStatus, setBookingStatus] = useState<"lead" | "pending" | "accepted" | "payment">("lead");
+  const [paymentUrl, setPaymentUrl] = useState<string>("");
+  const [paymentUnavailable, setPaymentUnavailable] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof GuestData | "agreeTerms", boolean>>>({});
 
   const handleClose = (next: boolean) => {
@@ -71,6 +82,8 @@ export function BookingDialog({
       setTimeout(() => {
         setStep(1);
         setSubmitError(false);
+        setPaymentUrl("");
+        setPaymentUnavailable(false);
         setFieldErrors({});
       }, 250);
     }
@@ -79,6 +92,7 @@ export function BookingDialog({
   async function handleSubmit(formData: FormData) {
     setSubmitting(true);
     setSubmitError(false);
+    setPaymentUnavailable(false);
     setFieldErrors({});
 
     const raw = {
@@ -140,8 +154,34 @@ export function BookingDialog({
         setSubmitting(false);
         return;
       }
-      setBookingRef(json.ref ?? generateRef(home.slug));
+      const ref = json.ref ?? generateRef(home.slug);
+      setBookingRef(ref);
       setBookingStatus(json.status ?? "lead");
+
+      const paymentRes = await fetch("/api/payments/superpay/iframe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingRef: ref,
+          homeSlug: home.slug,
+          checkIn,
+          checkOut,
+          guests,
+          guest: {
+            email: parsed.data.email,
+            phone: parsed.data.phone,
+          },
+          locale,
+        }),
+      });
+      const paymentJson = (await paymentRes.json().catch(() => ({}))) as PaymentIframeResponse;
+      if (paymentRes.ok && paymentJson.ok && paymentJson.url) {
+        setPaymentUrl(paymentJson.url);
+        setBookingStatus("payment");
+      } else if (paymentJson.error !== "superpay-not-configured") {
+        setPaymentUnavailable(true);
+      }
+
       setStep(3);
     } catch {
       setSubmitError(true);
@@ -189,7 +229,13 @@ export function BookingDialog({
                 {step === 1 ? t("step1.eyebrow") : step === 2 ? t("step2.eyebrow") : t("step3.eyebrow")}
               </p>
               <Dialog.Title className="mt-1 text-h4-mobile lg:text-h4 font-medium leading-tight">
-                {step === 1 ? t("step1.title") : step === 2 ? t("step2.title") : t("step3.title")}
+                {step === 1
+                  ? t("step1.title")
+                  : step === 2
+                    ? t("step2.title")
+                    : paymentUrl
+                      ? t("step3.paymentTitle")
+                      : t("step3.title")}
               </Dialog.Title>
             </div>
             <Dialog.Close asChild>
@@ -353,25 +399,53 @@ export function BookingDialog({
                 </motion.form>
               ) : (
                 <motion.div key="step3" {...motionProps} className="p-5 sm:p-7 text-center">
-                  <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-butter mt-4 mb-6">
-                    <Check className="h-7 w-7 text-navy" />
-                  </div>
-                  <p className="mx-auto max-w-md text-body-lg leading-relaxed text-navy/80 text-pretty">
-                    {bookingStatus === "pending"
-                      ? t("step3.subtitlePending")
-                      : t("step3.subtitle")}
-                  </p>
-                  {bookingRef ? (
-                    <p className="mt-6 inline-flex items-baseline gap-2 rounded-full bg-stone-100 px-4 py-1.5 text-xs uppercase tracking-eyebrow text-navy/65">
-                      <span className="text-navy/45">{t("step3.refLabel")}</span>
-                      <span className="font-mono text-navy">{bookingRef}</span>
-                    </p>
-                  ) : null}
-                  {bookingStatus === "pending" ? (
-                    <p className="mt-4 mx-auto max-w-md text-xs text-navy/55">
-                      {t("step3.paymentNote")}
-                    </p>
-                  ) : null}
+                  {paymentUrl ? (
+                    <>
+                      <p className="mx-auto max-w-md text-body-lg leading-relaxed text-navy/80 text-pretty">
+                        {t("step3.paymentSubtitle")}
+                      </p>
+                      {bookingRef ? (
+                        <p className="mt-5 inline-flex items-baseline gap-2 rounded-full bg-stone-100 px-4 py-1.5 text-xs uppercase tracking-eyebrow text-navy/65">
+                          <span className="text-navy/45">{t("step3.refLabel")}</span>
+                          <span className="font-mono text-navy">{bookingRef}</span>
+                        </p>
+                      ) : null}
+                      <div className="mt-6 overflow-hidden rounded-2xl bg-white ring-1 ring-navy/10">
+                        <iframe
+                          src={paymentUrl}
+                          title={t("step3.paymentFrameTitle")}
+                          className="h-[68svh] min-h-[560px] w-full bg-white"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-butter mt-4 mb-6">
+                        <Check className="h-7 w-7 text-navy" />
+                      </div>
+                      <p className="mx-auto max-w-md text-body-lg leading-relaxed text-navy/80 text-pretty">
+                      {bookingStatus === "pending"
+                        ? t("step3.subtitlePending")
+                        : t("step3.subtitle")}
+                      </p>
+                      {bookingRef ? (
+                        <p className="mt-6 inline-flex items-baseline gap-2 rounded-full bg-stone-100 px-4 py-1.5 text-xs uppercase tracking-eyebrow text-navy/65">
+                          <span className="text-navy/45">{t("step3.refLabel")}</span>
+                          <span className="font-mono text-navy">{bookingRef}</span>
+                        </p>
+                      ) : null}
+                      {bookingStatus === "pending" ? (
+                        <p className="mt-4 mx-auto max-w-md text-xs text-navy/55">
+                          {t("step3.paymentNote")}
+                        </p>
+                      ) : null}
+                      {paymentUnavailable ? (
+                        <p className="mt-4 mx-auto max-w-md text-xs text-maroon">
+                          {t("step3.paymentUnavailable")}
+                        </p>
+                      ) : null}
+                    </>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -413,7 +487,9 @@ export function BookingDialog({
               </>
             ) : (
               <>
-                {whatsappHref ? (
+                {paymentUrl ? (
+                  <p className="text-xs text-navy/55">{t("step3.paymentFooter")}</p>
+                ) : whatsappHref ? (
                   <Button asChild variant="ghost" size="md">
                     <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="h-4 w-4 me-1.5" />
@@ -423,14 +499,16 @@ export function BookingDialog({
                 ) : (
                   <span />
                 )}
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  onClick={() => handleClose(false)}
-                >
-                  {t("step3.closeCta")}
-                </Button>
+                {!paymentUrl ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
+                    onClick={() => handleClose(false)}
+                  >
+                    {t("step3.closeCta")}
+                  </Button>
+                ) : null}
               </>
             )}
           </footer>

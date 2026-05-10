@@ -523,7 +523,7 @@
       "bookDirect": "Book direct",
       "viaWhatsapp": "Reserve via WhatsApp",
       "savesYou": "You save {amount} vs Airbnb",
-      "noPaymentNow": "You won't be charged yet"
+      "noPaymentNow": "Secure card payment follows"
     },
     "mobileBar": {
       "from": "from",
@@ -580,10 +580,15 @@
     "step3": {
       "eyebrow": "Step 3 of 3",
       "title": "You're booked.",
+      "paymentTitle": "Complete secure payment",
       "subtitle": "We've sent confirmation to your email. The team will reach out on WhatsApp within the day to brief on arrival logistics.",
       "subtitlePending": "Your booking is held for you. We've created the reservation in our system and sent confirmation to your email — payment instructions follow on WhatsApp within the hour.",
+      "paymentSubtitle": "Your stay is held. Pay securely by card to confirm it now.",
+      "paymentFrameTitle": "SuperPay secure card payment",
+      "paymentFooter": "SuperPay handles the card details inside the secure payment frame.",
       "refLabel": "Booking ref",
       "paymentNote": "Payment is collected once the reservation is accepted. Until then your dates are held but not charged.",
+      "paymentUnavailable": "Card payment is temporarily unavailable. Your stay request is held, and the team can send a payment link manually.",
       "whatsappCta": "Open chat with the team",
       "closeCta": "Done"
     },
@@ -712,6 +717,23 @@
     "metaDescription": "Terms of service.",
     "heroHeadline": "Terms.",
     "phasePlaceholder": "Terms land in Phase 4."
+  },
+  "paymentResult": {
+    "refLabel": "Booking ref",
+    "success": {
+      "metaTitle": "Payment complete",
+      "metaDescription": "Your Travelholic payment has been completed.",
+      "eyebrow": "Payment complete",
+      "title": "Your stay is confirmed.",
+      "body": "SuperPay confirmed the card payment. The Travelholic team will follow up with arrival details."
+    },
+    "failure": {
+      "metaTitle": "Payment not completed",
+      "metaDescription": "Your Travelholic payment was not completed.",
+      "eyebrow": "Payment not completed",
+      "title": "The card payment did not go through.",
+      "body": "Your stay request is still with us. Try again from the booking window, or message the team on WhatsApp."
+    }
   },
   "cookies": {
     "title": "A small note on cookies.",
