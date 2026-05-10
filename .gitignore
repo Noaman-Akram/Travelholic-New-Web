@@ -48,5 +48,10 @@ next-env.d.ts
 # These are written by the server at runtime and must never be committed.
 .cache/
 
+# Playwright artifacts
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 # Claude Code per-machine permissions
 .claude/settings.local.json
