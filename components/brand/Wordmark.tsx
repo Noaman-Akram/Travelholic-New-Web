@@ -28,10 +28,20 @@ export function Wordmark({
     xl: "text-4xl md:text-5xl",
   }[size];
 
+  // Brand typography differs by locale:
+  // - EN: Inter, uppercase, semibold, tracked (Latin display style)
+  // - AR: Myriad Arabic, sentence case (no uppercase concept), no tracking,
+  //   weight 400 (only weight we self-host — semibold would render faux-bold)
+  const localeClass =
+    locale === "ar"
+      ? "font-arabic font-normal leading-none"
+      : "uppercase font-sans font-semibold leading-none tracking-[0.06em]";
+
   return (
     <span
       className={cn(
-        "inline-block uppercase font-sans font-semibold leading-none tracking-[0.06em]",
+        "inline-block",
+        localeClass,
         sizeClass,
         toneClass[tone],
         className,
