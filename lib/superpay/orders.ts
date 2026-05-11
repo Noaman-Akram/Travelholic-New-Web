@@ -34,7 +34,7 @@ export function generateMerchantOrderId(homeSlug: string): string {
   const slugSig = homeSlug.replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase() || "HOME";
   const ts = Date.now().toString(36).toUpperCase();
   const rand = randomBytes(3).toString("hex").toUpperCase();
-  return `TH-${slugSig}-${ts}-${rand}`;
+  return `TH${slugSig}${ts}${rand}`;
 }
 
 export async function saveOrder(order: PendingBooking): Promise<void> {
