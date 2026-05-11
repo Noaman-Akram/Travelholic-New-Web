@@ -6,8 +6,6 @@
  */
 
 export type SuperPayCurrency = "EGP";
-export type SuperPayPaymentMode = "AUTH_AND_CAP" | "THREE_DS";
-export type SuperPayMerchantLanguage = "EN" | "AR";
 
 export type SuperPayOrderStatus =
   | "INITIATE_AUTHORIZE"
@@ -28,17 +26,6 @@ export type IframeUrlRequest = {
   };
   /** Optional unique-per-customer id; enables card tokenization. */
   clientId?: string;
-  /** SuperPay redirects here after completion and appends response=<base64 JSON>. */
-  redirectionURL?: string;
-  /** Milliseconds SuperPay waits before redirecting after payment completion. */
-  delayTime?: number;
-  defaultPaymentMode?: SuperPayPaymentMode;
-  merchantLanguage?: SuperPayMerchantLanguage;
-  callbackConfig?: {
-    successCallbackUrls: string[];
-    failureCallbackUrls: string[];
-    refundCallbackUrls: string[];
-  };
   signature: string;         // HMAC-SHA256 hex of merchantOrderId + amount + currency
 };
 
@@ -130,7 +117,6 @@ export type PendingBooking = {
     paymentgwOrderId: string;
     orderStatus: SuperPayOrderStatus;
     completedAt: string;
-    paymentMethod?: string;
     acquirer?: string;
     network?: string;
   };

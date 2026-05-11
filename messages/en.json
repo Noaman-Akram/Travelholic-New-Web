@@ -14,7 +14,7 @@
     "save": "Save",
     "directPrice": "Direct",
     "otaPrice": "Airbnb / Booking",
-    "bookDirect": "Book direct",
+    "bookDirect": "Reserve",
     "viewDetails": "View home",
     "exploreCta": "Explore",
     "back": "Back",
@@ -36,13 +36,12 @@
     "stories": "Stories",
     "about": "About",
     "contact": "Contact",
-    "book": "Book direct",
-    "directRate": "Book direct. Pay less.",
+    "book": "Reserve",
     "menuLabel": "Menu",
     "closeLabel": "Close"
   },
   "footer": {
-    "tagline": "Book direct. Pay less.",
+    "tagline": "Stay with us — direct, always.",
     "newsletter": {
       "title": "The slow-news edition",
       "blurb": "A short letter from the homes — new openings, neighborhood notes, and direct-only rates. About once a month.",
@@ -100,8 +99,8 @@
     "decrement": "Remove a guest"
   },
   "home": {
-    "metaTitle": "Travelholic — Book direct, pay less in Cairo",
-    "metaDescription": "Homes Not Rooms. Premium serviced apartments in New Cairo and Golden Gates with lower rates when you book direct.",
+    "metaTitle": "Travelholic — Serviced apartments across Egypt",
+    "metaDescription": "Homes Not Rooms. Premium serviced apartments in New Cairo and Golden Gates — book direct and save vs OTAs.",
     "heroEyebrow": "Serviced apartments · Cairo",
     "heroHeadline": "Homes, not rooms.",
     "heroSubline": "Premium stays across New Cairo and Golden Gates — designed to feel lived-in, run like a hotel, priced lower when you book direct.",
@@ -270,7 +269,7 @@
   },
   "about": {
     "metaTitle": "About — Travelholic",
-    "metaDescription": "The team, the philosophy, and the homes behind Travelholic — built so guests can book direct and pay less.",
+    "metaDescription": "The team, the philosophy, and the homes behind Travelholic.",
     "heroEyebrow": "About Travelholic",
     "heroHeadline": "إكرام الضيف — honoring the guest.",
     "heroSubline": "We started Travelholic to make Cairo feel like home for the people we host. Five years on, that's still the only KPI that matters.",
@@ -340,7 +339,7 @@
   },
   "destinations": {
     "metaTitle": "Destinations — Travelholic",
-    "metaDescription": "Travelholic homes across New Cairo and Golden Gates — book direct for lower rates than OTA platforms.",
+    "metaDescription": "Travelholic homes across New Cairo (Lotus, AUC, Near CFC, 90 Street) and Golden Gates (GG Buildings, GG Villas, Nomads).",
     "heroEyebrow": "Where we are",
     "heroHeadline": "Two cities, seven addresses.",
     "heroSubline": "From the academic calm of AUC to the airport-side ease of Golden Gates — pick the corner of Cairo that fits the trip.",
@@ -357,7 +356,7 @@
   },
   "destinationDetail": {
     "metaTitle": "{name} — Travelholic",
-    "metaDescription": "Homes in {name}. Book direct with Travelholic for lower rates than OTAs.",
+    "metaDescription": "Homes in {name}.",
     "neighborhood": {
       "title": "The neighborhood",
       "subtitle": "What you should know before you land."
@@ -372,15 +371,13 @@
     "perNight": "/ night"
   },
   "homes": {
-    "metaTitle": "Book direct homes — Travelholic",
-    "metaDescription": "Browse Travelholic homes in Cairo. Book direct for lower rates than Airbnb and Booking.com.",
+    "metaTitle": "Homes — Travelholic",
+    "metaDescription": "Browse Travelholic homes — book direct, save vs OTAs.",
     "heroEyebrow": "Homes",
     "heroHeadline": "Find your home.",
     "heroSubline": "Forty-two homes across two areas of Cairo. Direct rates undercut the platforms — every home shows the savings.",
     "filters": {
       "title": "Filters",
-      "searchLabel": "Search homes",
-      "searchPlaceholder": "Search by home, area, amenity...",
       "destinations": "Destinations",
       "destinationsAny": "Any",
       "dates": "Dates",
@@ -419,8 +416,8 @@
     }
   },
   "homeDetail": {
-    "metaTitle": "{title} — Book direct, pay less",
-    "metaDescription": "{title} — book direct on Travelholic for a lower rate than OTA platforms.",
+    "metaTitle": "{title} — Travelholic",
+    "metaDescription": "{title} — book direct on Travelholic.",
     "share": "Share",
     "save": "Save",
     "viewAllPhotos": "View all {count} photos",
@@ -523,16 +520,15 @@
       "monthlyDiscount": "Monthly stay · {percent}% off",
       "cleaningFee": "Cleaning fee",
       "total": "Total",
-      "bookDirect": "Book direct",
+      "bookDirect": "Reserve stay",
       "viaWhatsapp": "Reserve via WhatsApp",
       "savesYou": "You save {amount} vs Airbnb",
-      "directRateNote": "Lower rate than the same home on OTA platforms.",
       "noPaymentNow": "You won't be charged yet"
     },
     "mobileBar": {
-      "from": "direct from",
+      "from": "from",
       "viewDates": "Pick dates",
-      "reserve": "Book direct"
+      "reserve": "Reserve"
     },
     "status": {
       "available": "Available",
@@ -612,30 +608,19 @@
   "bookingResult": {
     "loading": {
       "title": "Confirming your stay…",
-      "body": "Hang tight. We’re confirming your payment and booking now."
+      "body": "We're verifying your payment with SuperPay. This usually takes a few seconds — don't close the page."
     },
     "confirmed": {
       "eyebrow": "Booking confirmed",
       "title": "You're booked.",
-      "body": "Your payment is received and your stay is confirmed. We’ll send check-in details soon.",
-      "codeLabel": "Booking reference",
+      "body": "We'll send a confirmation email and a WhatsApp message with check-in details shortly.",
+      "codeLabel": "Confirmation code",
       "browseMore": "Browse more homes",
       "home": "Back to home"
     },
-    "receipt": {
-      "title": "Booking details",
-      "bookingRef": "Booking reference",
-      "paymentRef": "Payment reference",
-      "amount": "Amount paid",
-      "method": "Payment method",
-      "paidAt": "Paid at",
-      "stay": "Stay dates",
-      "guests": "Guests",
-      "download": "Download receipt"
-    },
     "pending": {
-      "title": "Almost done",
-      "body": "We’re still confirming the payment. Reference: {ref}"
+      "title": "Payment is processing",
+      "body": "We haven't received final confirmation from SuperPay yet. We'll email you the moment it lands. Reference: {ref}"
     },
     "failed": {
       "title": "Payment didn't go through",
@@ -643,8 +628,8 @@
       "tryAgain": "Try again"
     },
     "paidNoRes": {
-      "title": "Payment received",
-      "body": "We’re finalising your booking now. Reference: {ref}"
+      "title": "Payment received — finalising your booking",
+      "body": "Your card was charged successfully but we hit a snag confirming the dates with our system. The team has been notified and will reach out within an hour. Reference: {ref}"
     },
     "error": {
       "title": "We couldn't load your booking",
@@ -660,7 +645,7 @@
   },
   "experiences": {
     "metaTitle": "Experiences — Travelholic",
-    "metaDescription": "Concierge, transport, wellness, culture, corporate, long-stay services from Travelholic — best arranged when you book direct.",
+    "metaDescription": "Concierge, transport, wellness, culture, corporate, long-stay services from Travelholic.",
     "heroEyebrow": "Beyond the keys",
     "heroHeadline": "Things we'll arrange while you sleep.",
     "heroSubline": "Travelholic is a hospitality brand, not a key drop. The list below is what we set up for guests every week — sometimes before they even ask.",
@@ -679,7 +664,7 @@
   },
   "stories": {
     "metaTitle": "Stories — Travelholic",
-    "metaDescription": "Neighborhood guides, local culture, travel tips, and notes from inside Travelholic — including how direct bookings keep rates lower.",
+    "metaDescription": "Neighborhood guides, local culture, travel tips, and notes from inside Travelholic.",
     "heroEyebrow": "Stories",
     "heroHeadline": "Notes from the homes.",
     "heroSubline": "A slow magazine about Cairo, hospitality, and the people who make Travelholic.",
@@ -694,7 +679,7 @@
   },
   "storyDetail": {
     "metaTitle": "{title} — Travelholic",
-    "metaDescription": "{excerpt} Book direct with Travelholic for lower rates than OTAs.",
+    "metaDescription": "{excerpt}",
     "publishedOn": "Published {date}",
     "readTime": "{minutes} min read",
     "shareTitle": "Share",
@@ -702,7 +687,7 @@
   },
   "contact": {
     "metaTitle": "Contact — Travelholic",
-    "metaDescription": "Talk to the Travelholic team and book direct for lower rates than OTA platforms.",
+    "metaDescription": "Talk to the Travelholic team.",
     "heroEyebrow": "Contact",
     "heroHeadline": "Talk to a real person.",
     "heroSubline": "WhatsApp is fastest. Email is fine. The form below works too — we read every one.",
@@ -746,7 +731,7 @@
   },
   "appPage": {
     "metaTitle": "The Travelholic app — Travelholic",
-    "metaDescription": "Smart check-in, in-stay support, digital guidebook — the Travelholic app for direct-booking guests.",
+    "metaDescription": "Smart check-in, in-stay support, digital guidebook — the Travelholic app.",
     "heroEyebrow": "The Travelholic app",
     "heroHeadline": "Quietly competent.",
     "heroSubline": "Built so 95% of your stay never needs us — and so the 5% that does feels effortless.",

@@ -45,12 +45,9 @@ export function Navbar({ locale }: { locale: "en" | "ar" }) {
         <Link
           href="/"
           aria-label="Travelholic — home"
-          className="inline-flex items-center gap-3"
+          className="inline-flex items-center"
         >
           <Logo locale={locale} size="md" />
-          <span className="hidden xl:inline-flex rounded-full bg-butter px-3 py-1 text-[10px] font-medium uppercase tracking-eyebrow text-navy">
-            {t("directRate")}
-          </span>
         </Link>
 
         <nav className="hidden lg:flex items-center gap-6">

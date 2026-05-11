@@ -31,9 +31,7 @@ export default async function HomeOgImage({
   const destLabel = destination
     ? `${destination.name[params.locale]} · ${destination.areaName[params.locale]}`
     : home.destinationSlug;
-  const priceLabel = isAr
-    ? `مباشرة من ${home.pricing.nightlyEGP.toLocaleString()} ج.م / ليلة`
-    : `Direct from ${home.pricing.nightlyEGP.toLocaleString()} EGP / night`;
+  const priceLabel = `${home.pricing.nightlyEGP.toLocaleString()} EGP / ${isAr ? "ليلة" : "night"}`;
   const otaLabel = home.pricing.otaPriceEGP
     ? `${home.pricing.otaPriceEGP.toLocaleString()} EGP ${isAr ? "على Airbnb" : "on Airbnb"}`
     : null;

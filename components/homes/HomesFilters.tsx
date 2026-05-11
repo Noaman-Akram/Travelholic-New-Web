@@ -98,7 +98,7 @@ export function HomesFilters({ inSheet = false }: { inSheet?: boolean }) {
             <input
               type="date"
               value={filters.checkOut ?? ""}
-              min={filters.checkIn ? addDaysToISO(filters.checkIn, 1) : undefined}
+              min={filters.checkIn ?? undefined}
               onChange={(e) => setFilter("checkOut", e.target.value || null)}
               className="mt-1 w-full bg-transparent text-sm focus:outline-none"
             />
@@ -111,7 +111,6 @@ export function HomesFilters({ inSheet = false }: { inSheet?: boolean }) {
         <fieldset>
           <legend className={labelClass}>{t("guests")}</legend>
           <select
-            aria-label={t("guests")}
             value={filters.guests ?? ""}
             onChange={(e) => setFilter("guests", e.target.value ? Number(e.target.value) : null)}
             className="mt-3 w-full rounded-xl ring-1 ring-navy/15 bg-transparent px-3 py-2.5 text-sm focus:outline-none focus:ring-navy"
@@ -127,7 +126,6 @@ export function HomesFilters({ inSheet = false }: { inSheet?: boolean }) {
         <fieldset>
           <legend className={labelClass}>{t("bedrooms")}</legend>
           <select
-            aria-label={t("bedrooms")}
             value={filters.minBedrooms ?? ""}
             onChange={(e) =>
               setFilter("minBedrooms", e.target.value !== "" ? Number(e.target.value) : null)
@@ -251,13 +249,4 @@ function clampPrice(
     return Math.max(bounds.min, Math.min(value, current.priceMax - 100));
   }
   return Math.min(bounds.max, Math.max(value, current.priceMin + 100));
-}
-
-function addDaysToISO(value: string, days: number): string {
-  const date = new Date(`${value}T00:00:00`);
-  date.setDate(date.getDate() + days);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }

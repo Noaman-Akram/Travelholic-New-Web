@@ -15,9 +15,7 @@ import { createHmac } from "node:crypto";
  */
 
 function getSecret(): string {
-  const secret =
-    process.env.SUPERPAY_SECRET_KEY?.trim() ??
-    process.env.SUPERPAY_SECURE_HASH_KEY?.trim();
+  const secret = process.env.SUPERPAY_SECRET_KEY?.trim();
   if (!secret) {
     throw new Error(
       "SUPERPAY_SECRET_KEY is not set. Add it to .env.local — it's required to sign payment requests.",
