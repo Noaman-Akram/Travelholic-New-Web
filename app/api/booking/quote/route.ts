@@ -77,11 +77,11 @@ export async function GET(req: NextRequest) {
       fx: { rate: fx.rate, source: fx.source, fetchedAt: fx.fetchedAt },
     });
   } catch (err) {
+    const code = err instanceof HostifyError ? `hostify-${err.status}` : "hostify-error";
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[booking/quote] Hostify error:", code, message, err);
     return NextResponse.json(
-      {
-        ok: false,
-        error: err instanceof HostifyError ? `hostify-${err.status}` : "hostify-error",
-      },
+      { ok: false, error: code, message },
       { status: 502 },
     );
   }
