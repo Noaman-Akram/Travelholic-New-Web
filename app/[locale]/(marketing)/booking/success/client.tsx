@@ -74,6 +74,13 @@ export function BookingSuccessClient({
       return;
     }
 
+    // SuperPay signals failure in its redirect params. Skip polling immediately.
+    const spStatus = initialPayment?.orderStatus;
+    if (spStatus === "FAILURE" || spStatus === "FAILED" || spStatus === "CANCELLED") {
+      setView({ kind: "failed", reason: spStatus });
+      return;
+    }
+
     const startedAt = Date.now();
 
     async function poll() {

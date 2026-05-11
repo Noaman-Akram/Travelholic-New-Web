@@ -30,13 +30,28 @@ export default async function BookingSuccessPage({ params, searchParams }: Props
   const { ref, bt, response, params: superpayParams } = await searchParams;
   setRequestLocale(locale);
 
-  const redirectDetails = getPaymentDetailsFromResponse(response ?? superpayParams);
+  // SuperPay appends ?params=<base64> to our redirectionURL. Because our URL
+  // already has query params (?ref=...&bt=...), Next.js treats the second ?
+  // as a literal character inside the bt value rather than a new query param.
+  // Split it out manually here.
+  let cleanBt = bt ?? null;
+  let spParamsStr = response ?? superpayParams ?? null;
+  if (bt && !spParamsStr) {
+    const marker = "?params=";
+    const idx = bt.indexOf(marker);
+    if (idx !== -1) {
+      cleanBt = bt.slice(0, idx);
+      spParamsStr = bt.slice(idx + marker.length);
+    }
+  }
+
+  const redirectDetails = getPaymentDetailsFromResponse(spParamsStr ?? undefined);
   const merchantOrderId = ref ?? redirectDetails?.merchantOrderId ?? null;
 
   return (
     <BookingSuccessClient
       merchantOrderId={merchantOrderId}
-      bookingToken={bt ?? null}
+      bookingToken={cleanBt}
       initialPayment={redirectDetails}
     />
   );
@@ -52,7 +67,7 @@ function getPaymentDetailsFromResponse(response?: string): RedirectPaymentDetail
     return {
       merchantOrderId: stringOrUndefined(parsed.merchantOrderId),
       paymentgwOrderId: stringOrUndefined(parsed.paymentgwOrderId),
-      orderStatus: stringOrUndefined(parsed.orderStatus),
+      orderStatus: stringOrUndefined(parsed.orderStatus) ?? stringOrUndefined(parsed.status),
       paymentMethod: stringOrUndefined(parsed.paymentMethod),
       totalAmount: numberOrUndefined(parsed.totalAmount),
       netAmount: numberOrUndefined(parsed.netAmount),

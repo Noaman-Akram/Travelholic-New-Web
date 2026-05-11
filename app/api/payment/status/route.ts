@@ -111,7 +111,14 @@ export async function GET(req: NextRequest) {
           : { errorCode: status.errorCode, descriptionEnglish: status.descriptionEnglish },
     });
     if (status.status !== "SUCCESS") {
-      return NextResponse.json({ ok: true, state: "pending" });
+      // ORDER_NOT_FOUND = payment was never completed; treat as failed so the
+      // client stops polling rather than waiting out the 90s timeout.
+      const failed = status.errorCode === "ORDER_NOT_FOUND";
+      return NextResponse.json({
+        ok: true,
+        state: failed ? "failed" : "pending",
+        orderStatus: failed ? "ORDER_NOT_FOUND" : undefined,
+      });
     }
 
     if (status.orderStatus !== "PAY_COMPLETED") {
