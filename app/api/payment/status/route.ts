@@ -32,8 +32,14 @@ export async function GET(req: NextRequest) {
       hostifyReservationId: order.hostify.reservationId,
       paidAt: order.payment?.completedAt,
       homeSlug: order.homeSlug,
+      checkIn: order.checkIn,
+      checkOut: order.checkOut,
+      guests: order.guests,
       nights: order.nights,
       totalEGP: order.pricing.totalEGP,
+      paymentgwOrderId: order.payment?.paymentgwOrderId,
+      orderStatus: order.payment?.orderStatus,
+      paymentMethod: order.payment?.paymentMethod,
     });
   }
 
@@ -57,6 +63,7 @@ export async function GET(req: NextRequest) {
           paymentgwOrderId: status.paymentgwOrderId,
           orderStatus: status.orderStatus,
           completedAt: status.updatedTime,
+          paymentMethod: status.paymentMethod,
           acquirer: status.acquirer,
           network: status.network,
         },
@@ -90,6 +97,7 @@ export async function GET(req: NextRequest) {
           paymentgwOrderId: status.paymentgwOrderId,
           orderStatus: status.orderStatus,
           completedAt: status.updatedTime,
+          paymentMethod: status.paymentMethod,
           acquirer: status.acquirer,
           network: status.network,
         },
@@ -98,11 +106,12 @@ export async function GET(req: NextRequest) {
         {
           ok: false,
           state: "paid-no-reservation",
-          error: reservation.error,
-          paymentgwOrderId: status.paymentgwOrderId,
-        },
-        { status: 500 },
-      );
+        error: reservation.error,
+        paymentgwOrderId: status.paymentgwOrderId,
+        paidAt: status.updatedTime,
+      },
+      { status: 500 },
+    );
     }
 
     await updateOrder(order.merchantOrderId, {
@@ -110,6 +119,7 @@ export async function GET(req: NextRequest) {
         paymentgwOrderId: status.paymentgwOrderId,
         orderStatus: status.orderStatus,
         completedAt: status.updatedTime,
+        paymentMethod: status.paymentMethod,
         acquirer: status.acquirer,
         network: status.network,
       },
@@ -127,8 +137,14 @@ export async function GET(req: NextRequest) {
       hostifyReservationId: reservation.reservationId,
       paidAt: status.updatedTime,
       homeSlug: order.homeSlug,
+      checkIn: order.checkIn,
+      checkOut: order.checkOut,
+      guests: order.guests,
       nights: order.nights,
       totalEGP: order.pricing.totalEGP,
+      paymentgwOrderId: status.paymentgwOrderId,
+      orderStatus: status.orderStatus,
+      paymentMethod: status.paymentMethod,
     });
   } catch (err) {
     const code = err instanceof SuperPayError ? `superpay-${err.status}` : "status-error";

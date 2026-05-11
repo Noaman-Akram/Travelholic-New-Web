@@ -5,7 +5,18 @@ import { BookingSuccessClient } from "./client";
 
 type Props = {
   params: Promise<{ locale: AppLocale }>;
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; response?: string; params?: string }>;
+};
+
+export type RedirectPaymentDetails = {
+  merchantOrderId?: string;
+  paymentgwOrderId?: string;
+  orderStatus?: string;
+  paymentMethod?: string;
+  totalAmount?: number;
+  netAmount?: number;
+  currency?: string;
+  paidAt?: string;
 };
 
 export const metadata: Metadata = {
@@ -16,8 +27,46 @@ export const metadata: Metadata = {
 
 export default async function BookingSuccessPage({ params, searchParams }: Props) {
   const { locale } = await params;
-  const { ref } = await searchParams;
+  const { ref, response, params: superpayParams } = await searchParams;
   setRequestLocale(locale);
 
-  return <BookingSuccessClient merchantOrderId={ref ?? null} />;
+  const redirectDetails = getPaymentDetailsFromResponse(response ?? superpayParams);
+  const merchantOrderId = ref ?? redirectDetails?.merchantOrderId ?? null;
+
+  return (
+    <BookingSuccessClient
+      merchantOrderId={merchantOrderId}
+      initialPayment={redirectDetails}
+    />
+  );
+}
+
+function getPaymentDetailsFromResponse(response?: string): RedirectPaymentDetails | null {
+  if (!response) return null;
+
+  try {
+    const normalized = response.replace(/-/g, "+").replace(/_/g, "/");
+    const json = Buffer.from(normalized, "base64").toString("utf8");
+    const parsed = JSON.parse(json) as Record<string, unknown>;
+    return {
+      merchantOrderId: stringOrUndefined(parsed.merchantOrderId),
+      paymentgwOrderId: stringOrUndefined(parsed.paymentgwOrderId),
+      orderStatus: stringOrUndefined(parsed.orderStatus),
+      paymentMethod: stringOrUndefined(parsed.paymentMethod),
+      totalAmount: numberOrUndefined(parsed.totalAmount),
+      netAmount: numberOrUndefined(parsed.netAmount),
+      currency: stringOrUndefined(parsed.currency),
+      paidAt: stringOrUndefined(parsed.updatedTime) ?? stringOrUndefined(parsed.creationTime),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function stringOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function numberOrUndefined(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }

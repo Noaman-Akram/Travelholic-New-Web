@@ -13,6 +13,12 @@ function localeUrl(locale: AppLocale, path = ""): string {
   return `${base}/${locale}${path ? cleanPath : ""}`;
 }
 
+function directBookingLine(locale: AppLocale): string {
+  return locale === "ar"
+    ? "احجز مباشرة على تراڤل هوليك بسعر أقل من منصّات الحجز."
+    : "Book direct on Travelholic for lower rates than OTA platforms.";
+}
+
 export type JsonLdValue = Record<string, unknown>;
 
 /**
@@ -28,8 +34,7 @@ export function organization(locale: AppLocale): JsonLdValue {
     alternateName: locale === "ar" ? "تراڤل هوليك" : "Travelholic",
     url,
     logo: `${url}/brand/logo-light.png`,
-    description:
-      "Travelholic — premium serviced apartments across New Cairo and Golden Gates. Book direct, save vs OTAs.",
+    description: directBookingLine(locale),
     address: {
       "@type": "PostalAddress",
       addressLocality: "Cairo",
@@ -51,6 +56,7 @@ export function website(locale: AppLocale): JsonLdValue {
     "@id": `${url}#website`,
     url,
     name: "Travelholic",
+    description: directBookingLine(locale),
     inLanguage: locale === "ar" ? "ar-EG" : "en-EG",
     publisher: { "@id": `${url}#organization` },
   };
@@ -76,7 +82,7 @@ export function lodgingBusiness(
     "@type": "LodgingBusiness",
     "@id": url,
     name: home.title[locale],
-    description: home.description[locale],
+    description: `${home.description[locale]} ${directBookingLine(locale)}`,
     url,
     image: home.gallery.slice(0, 6).map((g) => g.src),
     address: {
@@ -91,6 +97,16 @@ export function lodgingBusiness(
       longitude: home.coordinates.lng,
     },
     priceRange: priceRangeFor(home),
+    offers: {
+      "@type": "Offer",
+      url,
+      price: home.pricing.nightlyEGP,
+      priceCurrency: "EGP",
+      availability: home.status === "unavailable"
+        ? "https://schema.org/SoldOut"
+        : "https://schema.org/InStock",
+      description: directBookingLine(locale),
+    },
     starRating: { "@type": "Rating", ratingValue: home.rating.toFixed(1), bestRating: "5" },
     aggregateRating: {
       "@type": "AggregateRating",
@@ -139,6 +155,7 @@ export function localBusiness(locale: AppLocale): JsonLdValue {
     email: "hello@travelholiceg.com",
     telephone: "+20 111 222 0844",
     url: localeUrl(locale, "/contact"),
+    description: directBookingLine(locale),
     openingHours: "Mo,Tu,We,Th,Fr,Sa,Su 00:00-24:00",
   };
 }

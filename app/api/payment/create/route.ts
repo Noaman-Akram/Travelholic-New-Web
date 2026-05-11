@@ -6,6 +6,7 @@ import {
   newOrderEnvelope,
   saveOrder,
 } from "@/lib/superpay/orders";
+import { getHomeBySlug } from "@/lib/data/server";
 
 const CreateSchema = z.object({
   homeSlug: z.string().min(1),
@@ -67,7 +68,29 @@ export async function POST(req: NextRequest) {
   }
   const data = parsed.data;
 
+  const home = await getHomeBySlug(data.homeSlug);
+  if (!home) {
+    return NextResponse.json({ ok: false, error: "home-not-found" }, { status: 404 });
+  }
+  if (data.guests > home.capacity.guests) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "guest-capacity-exceeded",
+        maxGuests: home.capacity.guests,
+      },
+      { status: 400 },
+    );
+  }
+
   const merchantOrderId = generateMerchantOrderId(data.homeSlug);
+  const appUrl =
+    (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin)
+      .replace(/\/$/, "");
+  const redirectionURL = `${appUrl}/${data.locale}/booking/success`;
+  const callbackURL = appUrl.startsWith("https://")
+    ? `${appUrl}/api/payment/webhook`
+    : undefined;
 
   const envelope = newOrderEnvelope({
     merchantOrderId,
@@ -91,6 +114,10 @@ export async function POST(req: NextRequest) {
       // Use the email as the customer identifier so SuperPay can offer
       // returning-card tokenization on subsequent bookings.
       clientId: data.guest.email,
+      redirectionURL,
+      ...(callbackURL ? { callbackURL } : {}),
+      delayTime: 900,
+      locale: data.locale,
     });
 
     return NextResponse.json({

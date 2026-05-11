@@ -67,6 +67,23 @@ export async function generateMetadata({
       template: `%s · ${tCommon("brand")}`,
     },
     description: t("metaDescription"),
+    applicationName: tCommon("brand"),
+    keywords:
+      locale === "ar"
+        ? [
+            "تراڤل هوليك",
+            "حجز مباشر",
+            "شقق فندقية القاهرة",
+            "سعر أقل من المنصات",
+            "بيوت لا غرف",
+          ]
+        : [
+            "Travelholic",
+            "book direct Cairo",
+            "lower direct rates",
+            "serviced apartments Cairo",
+            "Homes Not Rooms",
+          ],
     metadataBase: new URL(
       process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
     ),

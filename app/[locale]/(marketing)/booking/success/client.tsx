@@ -1,12 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
-import { Check, Loader2, AlertCircle } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { Check, Loader2, AlertCircle, Download } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { KeyholeMark } from "@/components/brand/KeyholeMark";
 import { trackBookingSubmitted } from "@/lib/analytics/track";
+import type { RedirectPaymentDetails } from "./page";
+
+type PaymentDetails = RedirectPaymentDetails & {
+  confirmationCode?: string;
+  hostifyReservationId?: number;
+  homeSlug?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+  nights?: number;
+};
 
 type StatusResponse =
   | {
@@ -16,8 +27,14 @@ type StatusResponse =
       hostifyReservationId?: number;
       paidAt?: string;
       homeSlug?: string;
+      checkIn?: string;
+      checkOut?: string;
+      guests?: number;
       nights?: number;
       totalEGP?: number;
+      paymentgwOrderId?: string;
+      orderStatus?: string;
+      paymentMethod?: string;
     }
   | { ok: true; state: "pending"; orderStatus?: string; reason?: string }
   | { ok: true; state: "failed"; orderStatus?: string }
@@ -37,11 +54,15 @@ const POLL_TIMEOUT_MS = 90_000;
 
 export function BookingSuccessClient({
   merchantOrderId,
+  initialPayment,
 }: {
   merchantOrderId: string | null;
+  initialPayment: RedirectPaymentDetails | null;
 }) {
   const t = useTranslations("bookingResult");
+  const locale = useLocale();
   const [view, setView] = useState<View>({ kind: "loading" });
+  const [payment, setPayment] = useState<PaymentDetails>(initialPayment ?? {});
   const stoppedRef = useRef(false);
   const conversionFiredRef = useRef(false);
 
@@ -64,6 +85,23 @@ export function BookingSuccessClient({
         if (stoppedRef.current) return;
 
         if (data.ok && "state" in data && data.state === "confirmed") {
+          setPayment((current) => ({
+            ...current,
+            merchantOrderId: merchantOrderId ?? current.merchantOrderId,
+            confirmationCode: data.confirmationCode,
+            hostifyReservationId: data.hostifyReservationId,
+            paidAt: data.paidAt ?? current.paidAt,
+            homeSlug: data.homeSlug ?? current.homeSlug,
+            checkIn: data.checkIn ?? current.checkIn,
+            checkOut: data.checkOut ?? current.checkOut,
+            guests: data.guests ?? current.guests,
+            nights: data.nights ?? current.nights,
+            totalAmount: data.totalEGP ?? current.totalAmount,
+            currency: current.currency ?? "EGP",
+            paymentgwOrderId: data.paymentgwOrderId ?? current.paymentgwOrderId,
+            orderStatus: data.orderStatus ?? current.orderStatus,
+            paymentMethod: data.paymentMethod ?? current.paymentMethod,
+          }));
           setView({
             kind: "confirmed",
             code: data.confirmationCode,
@@ -90,6 +128,11 @@ export function BookingSuccessClient({
           return;
         }
         if (!data.ok && "state" in data && data.state === "paid-no-reservation") {
+          setPayment((current) => ({
+            ...current,
+            merchantOrderId: merchantOrderId ?? current.merchantOrderId,
+            paymentgwOrderId: "paymentgwOrderId" in data ? data.paymentgwOrderId : current.paymentgwOrderId,
+          }));
           setView({
             kind: "paid-no-reservation",
             paymentgwOrderId: "paymentgwOrderId" in data ? data.paymentgwOrderId : undefined,
@@ -167,6 +210,21 @@ export function BookingSuccessClient({
                   {view.code || merchantOrderId || "—"}
                 </p>
               </div>
+              <PaymentReceiptCard
+                details={payment}
+                locale={locale}
+                labels={{
+                  title: t("receipt.title"),
+                  bookingRef: t("receipt.bookingRef"),
+                  paymentRef: t("receipt.paymentRef"),
+                  amount: t("receipt.amount"),
+                  method: t("receipt.method"),
+                  paidAt: t("receipt.paidAt"),
+                  stay: t("receipt.stay"),
+                  guests: t("receipt.guests"),
+                  download: t("receipt.download"),
+                }}
+              />
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button asChild variant="primary" size="lg">
                   <Link href="/homes">{t("confirmed.browseMore")}</Link>
@@ -216,6 +274,25 @@ export function BookingSuccessClient({
               <p className="text-body-lg text-navy/70 max-w-md text-pretty">
                 {t("paidNoRes.body", { ref: merchantOrderId ?? "" })}
               </p>
+              <PaymentReceiptCard
+                details={{
+                  ...payment,
+                  merchantOrderId: merchantOrderId ?? payment.merchantOrderId,
+                  paymentgwOrderId: view.paymentgwOrderId ?? payment.paymentgwOrderId,
+                }}
+                locale={locale}
+                labels={{
+                  title: t("receipt.title"),
+                  bookingRef: t("receipt.bookingRef"),
+                  paymentRef: t("receipt.paymentRef"),
+                  amount: t("receipt.amount"),
+                  method: t("receipt.method"),
+                  paidAt: t("receipt.paidAt"),
+                  stay: t("receipt.stay"),
+                  guests: t("receipt.guests"),
+                  download: t("receipt.download"),
+                }}
+              />
             </>
           ) : null}
 
@@ -239,3 +316,112 @@ export function BookingSuccessClient({
   );
 }
 
+function PaymentReceiptCard({
+  details,
+  labels,
+  locale,
+}: {
+  details: PaymentDetails;
+  labels: {
+    title: string;
+    bookingRef: string;
+    paymentRef: string;
+    amount: string;
+    method: string;
+    paidAt: string;
+    stay: string;
+    guests: string;
+    download: string;
+  };
+  locale: string;
+}) {
+  const rows = [
+    { label: labels.bookingRef, value: details.merchantOrderId ?? details.confirmationCode },
+    { label: labels.paymentRef, value: details.paymentgwOrderId },
+    {
+      label: labels.amount,
+      value: formatReceiptAmount(details.totalAmount ?? details.netAmount, details.currency, locale),
+    },
+    { label: labels.method, value: details.paymentMethod },
+    { label: labels.paidAt, value: formatReceiptDate(details.paidAt, locale) },
+    {
+      label: labels.stay,
+      value: details.checkIn && details.checkOut ? `${details.checkIn} → ${details.checkOut}` : undefined,
+    },
+    {
+      label: labels.guests,
+      value: typeof details.guests === "number" ? String(details.guests) : undefined,
+    },
+  ].filter((row): row is { label: string; value: string } => Boolean(row.value));
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="w-full max-w-xl rounded-3xl bg-stone-100 ring-1 ring-navy/8 px-6 py-5 mb-8 text-start">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 className="text-base font-medium">{labels.title}</h2>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => downloadReceipt(details, labels, locale)}
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          {labels.download}
+        </Button>
+      </div>
+      <dl className="divide-y divide-navy/10">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-start justify-between gap-4 py-3">
+            <dt className="text-sm text-navy/55">{row.label}</dt>
+            <dd className="text-sm font-medium text-navy tabular-nums text-end">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function downloadReceipt(details: PaymentDetails, labels: Record<string, string>, locale: string) {
+  const lines = [
+    "Travelholic",
+    labels.title,
+    "",
+    `${labels.bookingRef}: ${details.merchantOrderId ?? details.confirmationCode ?? ""}`,
+    `${labels.paymentRef}: ${details.paymentgwOrderId ?? ""}`,
+    `${labels.amount}: ${formatReceiptAmount(details.totalAmount ?? details.netAmount, details.currency, locale) ?? ""}`,
+    `${labels.method}: ${details.paymentMethod ?? ""}`,
+    `${labels.paidAt}: ${formatReceiptDate(details.paidAt, locale) ?? ""}`,
+    `${labels.stay}: ${details.checkIn && details.checkOut ? `${details.checkIn} -> ${details.checkOut}` : ""}`,
+    `${labels.guests}: ${typeof details.guests === "number" ? details.guests : ""}`,
+  ];
+  const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `travelholic-receipt-${details.merchantOrderId ?? "booking"}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function formatReceiptAmount(amount: number | undefined, currency: string | undefined, locale: string) {
+  if (typeof amount !== "number") return undefined;
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency ?? "EGP",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function formatReceiptDate(value: string | undefined, locale: string) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}

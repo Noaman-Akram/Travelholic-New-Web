@@ -15,14 +15,15 @@ import type { WebhookNotificationParams } from "@/lib/superpay/types";
  * deliberately deferred at /api/payment/create time to avoid orphans).
  */
 export async function GET(req: NextRequest) {
-  const responseParam = req.nextUrl.searchParams.get("response");
+  const responseParam = req.nextUrl.searchParams.get("response") ?? req.nextUrl.searchParams.get("params");
   if (!responseParam) {
     return NextResponse.json({ ok: false, error: "missing-response" }, { status: 400 });
   }
 
   let notification: WebhookNotificationParams;
   try {
-    const json = Buffer.from(responseParam, "base64").toString("utf8");
+    const normalized = responseParam.replace(/-/g, "+").replace(/_/g, "/");
+    const json = Buffer.from(normalized, "base64").toString("utf8");
     notification = JSON.parse(json) as WebhookNotificationParams;
   } catch {
     return NextResponse.json({ ok: false, error: "invalid-base64" }, { status: 400 });
@@ -93,6 +94,7 @@ export async function GET(req: NextRequest) {
       paymentgwOrderId,
       orderStatus: verified.orderStatus,
       completedAt: new Date().toISOString(),
+      paymentMethod: verified.paymentMethod,
       acquirer: verified.acquirer,
       network: verified.network,
     },

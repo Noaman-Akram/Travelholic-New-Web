@@ -6,6 +6,8 @@ import type {
   IframeUrlResponse,
   OrderStatusResponse,
   SuperPayCurrency,
+  SuperPayMerchantLanguage,
+  SuperPayPaymentMode,
 } from "./types";
 
 const DEFAULT_BASE = "https://merchant.super-pay.com";
@@ -19,6 +21,9 @@ function getMerchantCode(): string {
   if (!code) {
     throw new SuperPayError(0, "SUPERPAY_MERCHANT_CODE is not set");
   }
+  if (process.env.NODE_ENV === "production" && code.endsWith("_TST")) {
+    throw new SuperPayError(0, "Production cannot use a SuperPay test merchant code");
+  }
   return code;
 }
 
@@ -30,11 +35,22 @@ function getApiKey(): string {
   return key;
 }
 
+function getPaymentMode(): SuperPayPaymentMode {
+  const mode = process.env.SUPERPAY_PAYMENT_MODE?.trim();
+  return mode === "AUTH_AND_CAP" || mode === "THREE_DS" ? mode : "THREE_DS";
+}
+
+function getMerchantLanguage(locale?: "en" | "ar"): SuperPayMerchantLanguage {
+  if (locale === "ar") return "AR";
+  const language = process.env.SUPERPAY_MERCHANT_LANGUAGE?.trim().toUpperCase();
+  return language === "AR" ? "AR" : "EN";
+}
+
 export const SUPERPAY_AVAILABLE = (): boolean =>
   Boolean(
     process.env.SUPERPAY_MERCHANT_CODE &&
       process.env.SUPERPAY_API_KEY &&
-      process.env.SUPERPAY_SECRET_KEY,
+      (process.env.SUPERPAY_SECRET_KEY || process.env.SUPERPAY_SECURE_HASH_KEY),
   );
 
 export class SuperPayError extends Error {
@@ -164,6 +180,10 @@ export const superpay = {
     amount: number;
     currency?: SuperPayCurrency;
     clientId?: string;
+    redirectionURL?: string;
+    callbackURL?: string;
+    delayTime?: number;
+    locale?: "en" | "ar";
   }): Promise<{ url: string }> {
     const currency: SuperPayCurrency = args.currency ?? "EGP";
     const signature = signOrderCreate({
@@ -179,6 +199,19 @@ export const superpay = {
         currency,
       },
       ...(args.clientId ? { clientId: args.clientId } : {}),
+      ...(args.redirectionURL ? { redirectionURL: args.redirectionURL } : {}),
+      ...(args.delayTime ? { delayTime: args.delayTime } : {}),
+      defaultPaymentMode: getPaymentMode(),
+      merchantLanguage: getMerchantLanguage(args.locale),
+      ...(args.callbackURL
+        ? {
+            callbackConfig: {
+              successCallbackUrls: [args.callbackURL],
+              failureCallbackUrls: [args.callbackURL],
+              refundCallbackUrls: [args.callbackURL],
+            },
+          }
+        : {}),
       signature,
     };
 

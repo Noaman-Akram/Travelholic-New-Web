@@ -18,7 +18,11 @@ import type { PendingBooking } from "./types";
  */
 
 const ORDER_TTL_MS = 15 * 60 * 1000; // 15 minutes
-const STORE_DIR = path.resolve(process.cwd(), ".cache", "pending-orders");
+const STORE_DIR =
+  process.env.SUPERPAY_ORDER_STORE_DIR ??
+  (process.env.VERCEL
+    ? path.join("/tmp", "travelholic-pending-orders")
+    : path.resolve(process.cwd(), ".cache", "pending-orders"));
 
 function fileFor(merchantOrderId: string): string {
   // Whitelist on the slug/id segment to avoid path traversal.

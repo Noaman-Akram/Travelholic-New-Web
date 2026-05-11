@@ -47,10 +47,11 @@ export function HomeStickyBooking({ home }: { home: Home }) {
   const today = new Date();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   const threeNights = new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000);
+  const defaultGuests = Math.max(1, Math.min(2, home.capacity.guests));
 
   const [checkIn, setCheckIn] = useState<string>(formatISODate(tomorrow));
   const [checkOut, setCheckOut] = useState<string>(formatISODate(threeNights));
-  const [guests, setGuests] = useState<number>(2);
+  const [guests, setGuests] = useState<number>(defaultGuests);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [quoteState, setQuoteState] = useState<QuoteState>({ kind: "idle" });
 
@@ -265,6 +266,9 @@ export function HomeStickyBooking({ home }: { home: Home }) {
                 })}
               </p>
             ) : null}
+            <p className="mt-3 text-xs text-navy/60">
+              {t("directRateNote")}
+            </p>
           </div>
         ) : (
           <p className="mt-5 text-sm text-navy/55">{t("selectDates")}</p>
