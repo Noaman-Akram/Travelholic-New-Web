@@ -3,6 +3,7 @@ import "server-only";
 import { signKeyExchange, signOrderCreate, signRefund } from "./signature";
 import type {
   IframeUrlRequest,
+  IframeUrlResponse,
   OrderStatusResponse,
   SuperPayCurrency,
   SuperPayMerchantLanguage,
@@ -140,33 +141,6 @@ async function getJson<T>(path: string, headers: Record<string, string> = {}): P
   }
 }
 
-function encodeBase64Url(value: string): string {
-  return Buffer.from(value, "utf8").toString("base64url");
-}
-
-function encodePaymentBody(body: IframeUrlRequest, formattedAmount: string): string {
-  const optionalEntries = [
-    body.clientId ? `"clientId":${JSON.stringify(body.clientId)}` : null,
-    body.redirectionURL ? `"redirectionURL":${JSON.stringify(body.redirectionURL)}` : null,
-    body.delayTime ? `"delayTime":${body.delayTime}` : null,
-    body.defaultPaymentMode
-      ? `"defaultPaymentMode":${JSON.stringify(body.defaultPaymentMode)}`
-      : null,
-    body.merchantLanguage ? `"merchantLanguage":${JSON.stringify(body.merchantLanguage)}` : null,
-    body.callbackConfig
-      ? `"callbackConfig":${JSON.stringify(body.callbackConfig)}`
-      : null,
-  ].filter(Boolean);
-  const json = [
-    `"merchant":${JSON.stringify(body.merchant)}`,
-    `"order":{"merchantOrderId":${JSON.stringify(body.order.merchantOrderId)},"amount":${formattedAmount},"currency":${JSON.stringify(body.order.currency)}}`,
-    ...optionalEntries,
-    `"signature":${JSON.stringify(body.signature)}`,
-  ].join(",");
-
-  return encodeBase64Url(`{${json}}`);
-}
-
 /**
  * Key exchange — required for the Get Order Status + Refund APIs (but not
  * for iframe URL creation, which signs with the static secret only).
@@ -212,18 +186,16 @@ export const superpay = {
     locale?: "en" | "ar";
   }): Promise<{ url: string }> {
     const currency: SuperPayCurrency = args.currency ?? "EGP";
-    const amount = Math.round(args.amount * 100) / 100;
-    const amountForSignature = amount.toFixed(2);
     const signature = signOrderCreate({
       merchantOrderId: args.merchantOrderId,
-      amount,
+      amount: args.amount,
       currency,
     });
     const body: IframeUrlRequest = {
       merchant: { code: getMerchantCode(), apiKey: getApiKey() },
       order: {
         merchantOrderId: args.merchantOrderId,
-        amount,
+        amount: Math.round(args.amount * 100) / 100,
         currency,
       },
       ...(args.clientId ? { clientId: args.clientId } : {}),
@@ -242,8 +214,20 @@ export const superpay = {
         : {}),
       signature,
     };
-    const encoded = encodePaymentBody(body, amountForSignature);
-    return { url: `${getBase()}/sp/pay/${encoded}` };
+
+    const data = await postJson<IframeUrlResponse>(
+      "/ordertransaction/api/1/sts/iframe/url",
+      body,
+    );
+
+    if (data.status !== "SUCCESS" || !("url" in data) || !data.url) {
+      const failure = data as { errorCode?: string; descriptionEnglish?: string };
+      throw new SuperPayError(
+        0,
+        failure.descriptionEnglish ?? `iframe-url failed (${failure.errorCode ?? "unknown"})`,
+      );
+    }
+    return { url: data.url };
   },
 
   /**

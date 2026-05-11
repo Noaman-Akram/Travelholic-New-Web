@@ -136,7 +136,10 @@ export async function POST(req: NextRequest) {
     bookingToken,
   });
   const callbackURL = appUrl.startsWith("https://")
-    ? withPaymentParams(`${appUrl}/api/payment/webhook`, { merchantOrderId })
+    ? withPaymentParams(`${appUrl}/api/payment/webhook`, {
+        merchantOrderId,
+        bookingToken,
+      })
     : undefined;
 
   await saveOrder(envelope);
@@ -188,8 +191,6 @@ export async function POST(req: NextRequest) {
       details: {
         redirectUrl: redirectionURL,
         callbackEnabled: Boolean(callbackURL),
-        paymentUrlLength: url.length,
-        merchantOrderIdFormat: "alphanumeric",
       },
     });
 
@@ -225,10 +226,10 @@ export async function POST(req: NextRequest) {
 
 function withPaymentParams(
   rawUrl: string,
-  params: { merchantOrderId: string; bookingToken?: string },
+  params: { merchantOrderId: string; bookingToken: string },
 ): string {
   const url = new URL(rawUrl);
   url.searchParams.set("ref", params.merchantOrderId);
-  if (params.bookingToken) url.searchParams.set("bt", params.bookingToken);
+  url.searchParams.set("bt", params.bookingToken);
   return url.toString();
 }
