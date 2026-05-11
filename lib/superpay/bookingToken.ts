@@ -8,7 +8,6 @@ const ALGORITHM = "aes-256-gcm";
 
 function getTokenSecret(): string {
   const secret =
-    process.env.PAYMENT_BOOKING_TOKEN_SECRET?.trim() ||
     process.env.SUPERPAY_SECRET_KEY?.trim() ||
     process.env.SUPERPAY_SECURE_HASH_KEY?.trim();
 

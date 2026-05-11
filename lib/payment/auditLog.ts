@@ -1,7 +1,6 @@
 import "server-only";
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { createPaymentAirtableRecord, paymentAirtableConfigured } from "./airtableClient";
 
 type PaymentAuditLevel = "info" | "warn" | "error";
 
@@ -29,52 +28,15 @@ export type PaymentAuditRecord = PaymentAuditEvent & {
   level: PaymentAuditLevel;
 };
 
-const LOG_DIR =
-  process.env.PAYMENT_AUDIT_LOG_DIR ??
-  (process.env.VERCEL
-    ? path.join("/tmp", "travelholic-payment-audit")
-    : path.resolve(process.cwd(), ".cache", "payment-audit"));
-const LOG_FILE = path.join(LOG_DIR, "payment-events.jsonl");
-
 export async function paymentAudit(event: PaymentAuditEvent): Promise<void> {
   const record: PaymentAuditRecord = {
     ...event,
     level: event.level ?? "info",
     at: new Date().toISOString(),
   };
-  const line = JSON.stringify(record);
 
   writeConsole(record);
-
-  try {
-    await fs.mkdir(LOG_DIR, { recursive: true });
-    await fs.appendFile(LOG_FILE, `${line}\n`, "utf8");
-  } catch (err) {
-    writeConsole({
-      at: new Date().toISOString(),
-      level: "error",
-      event: "payment_audit_write_failed",
-      source: "logs",
-      error: err instanceof Error ? err.message : "unknown-error",
-    });
-  }
-
-  await pushAuditWebhook(record);
-}
-
-export async function readPaymentAudit(limit = 200): Promise<PaymentAuditRecord[]> {
-  try {
-    const text = await fs.readFile(LOG_FILE, "utf8");
-    return text
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .slice(-Math.max(1, Math.min(limit, 1000)))
-      .map((line) => JSON.parse(line) as PaymentAuditRecord)
-      .reverse();
-  } catch {
-    return [];
-  }
+  await pushAuditToAirtable(record);
 }
 
 function writeConsole(record: PaymentAuditRecord): void {
@@ -91,43 +53,41 @@ function writeConsole(record: PaymentAuditRecord): void {
   }
 }
 
-async function pushAuditWebhook(record: PaymentAuditRecord): Promise<void> {
-  const url = process.env.PAYMENT_AUDIT_WEBHOOK_URL?.trim();
-  if (!url) return;
+async function pushAuditToAirtable(record: PaymentAuditRecord): Promise<void> {
+  if (!paymentAirtableConfigured()) return;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4000);
+  const result = await createPaymentAirtableRecord(
+    {
+      Name: `${record.event}${record.merchantOrderId ? ` - ${record.merchantOrderId}` : ""}`,
+      "Created At": record.at,
+      Source: record.source,
+      "Merchant Order ID": record.merchantOrderId,
+      "SuperPay Payment ID": record.paymentgwOrderId,
+      "SuperPay Status": record.orderStatus,
+      "Hostify Reservation ID": record.hostifyReservationId
+        ? String(record.hostifyReservationId)
+        : undefined,
+      "Confirmation Code": record.confirmationCode,
+      "Home Slug": record.homeSlug,
+      "Check In": record.checkIn,
+      "Check Out": record.checkOut,
+      Guests: record.guests,
+      "Total EGP": record.totalEGP,
+      "Event Log": JSON.stringify(record, null, 2),
+    },
+    2500,
+  );
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(record),
-      cache: "no-store",
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      writeConsole({
-        at: new Date().toISOString(),
-        level: "warn",
-        event: "payment_audit_webhook_failed",
-        source: "logs",
-        details: { status: res.status },
-      });
-    }
-  } catch (err) {
+  if (!result.ok) {
     writeConsole({
       at: new Date().toISOString(),
       level: "warn",
-      event: "payment_audit_webhook_error",
-      source: "logs",
-      error: err instanceof Error ? err.message : "unknown-error",
+      event: "payment_audit_airtable_failed",
+      source: "hostify",
+      error: result.error,
+      message: result.message,
+      details: { status: result.status },
     });
-  } finally {
-    clearTimeout(timeout);
   }
 }
 

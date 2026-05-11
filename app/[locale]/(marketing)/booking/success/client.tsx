@@ -67,6 +67,7 @@ export function BookingSuccessClient({
   const [payment, setPayment] = useState<PaymentDetails>(initialPayment ?? {});
   const stoppedRef = useRef(false);
   const conversionFiredRef = useRef(false);
+  const initialOrderStatus = initialPayment?.orderStatus;
 
   useEffect(() => {
     if (!merchantOrderId) {
@@ -75,7 +76,7 @@ export function BookingSuccessClient({
     }
 
     // SuperPay signals failure in its redirect params. Skip polling immediately.
-    const spStatus = initialPayment?.orderStatus;
+    const spStatus = initialOrderStatus;
     if (spStatus === "FAILURE" || spStatus === "FAILED" || spStatus === "CANCELLED") {
       setView({ kind: "failed", reason: spStatus });
       return;
@@ -179,7 +180,7 @@ export function BookingSuccessClient({
     return () => {
       stoppedRef.current = true;
     };
-  }, [merchantOrderId, bookingToken]);
+  }, [merchantOrderId, bookingToken, initialOrderStatus]);
 
   return (
     <main className="min-h-[80vh] bg-stone py-24 lg:py-32">

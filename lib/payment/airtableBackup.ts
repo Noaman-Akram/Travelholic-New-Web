@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { PendingBooking, OrderStatusResponse } from "@/lib/superpay/types";
+import { createPaymentAirtableRecord, paymentAirtableConfigured } from "./airtableClient";
 import { paymentAudit } from "./auditLog";
 
 type BackupInput = {
@@ -19,31 +20,8 @@ type BackupInput = {
   };
 };
 
-type AirtableResponse = {
-  id?: string;
-  error?: {
-    type?: string;
-    message?: string;
-  };
-};
-
-function getConfig():
-  | {
-      token: string;
-      baseId: string;
-      table: string;
-    }
-  | null {
-  const token = process.env.PAYMENT_AIRTABLE_API_KEY?.trim();
-  const baseId = process.env.PAYMENT_AIRTABLE_BASE_ID?.trim();
-  const table = process.env.PAYMENT_AIRTABLE_TABLE_ID?.trim();
-  if (!token || !baseId || !table) return null;
-  return { token, baseId, table };
-}
-
 export async function createPaymentAirtableBackup(input: BackupInput): Promise<void> {
-  const config = getConfig();
-  if (!config) {
+  if (!paymentAirtableConfigured()) {
     await paymentAudit({
       level: "warn",
       event: "payment_airtable_backup_skipped_not_configured",
@@ -99,58 +77,33 @@ export async function createPaymentAirtableBackup(input: BackupInput): Promise<v
     ),
   };
 
-  try {
-    const res = await fetch(
-      `https://api.airtable.com/v0/${encodeURIComponent(config.baseId)}/${encodeURIComponent(config.table)}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ fields, typecast: true }),
-        cache: "no-store",
-      },
-    );
-    const data = (await res.json().catch(() => ({}))) as AirtableResponse;
+  const result = await createPaymentAirtableRecord(fields);
 
-    if (!res.ok) {
-      await paymentAudit({
-        level: "error",
-        event: "payment_airtable_backup_failed",
-        source: input.source,
-        merchantOrderId: input.order.merchantOrderId,
-        paymentgwOrderId: input.payment.paymentgwOrderId,
-        hostifyReservationId: input.hostify.reservationId,
-        confirmationCode: input.hostify.confirmationCode,
-        homeSlug: input.order.homeSlug,
-        error: data.error?.type ?? `airtable-${res.status}`,
-        message: data.error?.message,
-      });
-      return;
-    }
-
-    await paymentAudit({
-      event: "payment_airtable_backup_succeeded",
-      source: input.source,
-      merchantOrderId: input.order.merchantOrderId,
-      paymentgwOrderId: input.payment.paymentgwOrderId,
-      hostifyReservationId: input.hostify.reservationId,
-      confirmationCode: input.hostify.confirmationCode,
-      homeSlug: input.order.homeSlug,
-      details: { airtableRecordId: data.id },
-    });
-  } catch (err) {
+  if (!result.ok) {
     await paymentAudit({
       level: "error",
-      event: "payment_airtable_backup_error",
+      event: "payment_airtable_backup_failed",
       source: input.source,
       merchantOrderId: input.order.merchantOrderId,
       paymentgwOrderId: input.payment.paymentgwOrderId,
       hostifyReservationId: input.hostify.reservationId,
       confirmationCode: input.hostify.confirmationCode,
       homeSlug: input.order.homeSlug,
-      error: err instanceof Error ? err.message : "unknown-error",
+      error: result.error,
+      message: result.message,
+      details: { status: result.status },
     });
+    return;
   }
+
+  await paymentAudit({
+    event: "payment_airtable_backup_succeeded",
+    source: input.source,
+    merchantOrderId: input.order.merchantOrderId,
+    paymentgwOrderId: input.payment.paymentgwOrderId,
+    hostifyReservationId: input.hostify.reservationId,
+    confirmationCode: input.hostify.confirmationCode,
+    homeSlug: input.order.homeSlug,
+    details: { airtableRecordId: result.id },
+  });
 }
