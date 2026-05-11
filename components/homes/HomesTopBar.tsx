@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Grid2x2, Map, SlidersHorizontal } from "lucide-react";
+import { Grid2x2, Map, Search, SlidersHorizontal } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -16,12 +16,12 @@ import { cn } from "@/lib/utils/cn";
 
 export function HomesTopBar() {
   const t = useTranslations("homes");
-  const { results, view, setView, sort, setSort } = useHomesFilters();
+  const { filters, setFilter, results, view, setView, sort, setSort } = useHomesFilters();
 
   return (
     <div className="sticky top-16 lg:top-20 z-20 bg-stone/95 backdrop-blur-md border-b border-navy/10">
-      <div className="mx-auto max-w-screen-2xl px-5 sm:px-6 lg:px-8 xl:px-10 py-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="mx-auto max-w-screen-2xl px-5 sm:px-6 lg:px-8 xl:px-10 py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Mobile filter trigger */}
           <Sheet>
             <SheetTrigger asChild>
@@ -47,6 +47,18 @@ export function HomesTopBar() {
           <p className="text-sm text-navy/70">
             {t("results.count", { count: results.length })}
           </p>
+
+          <label className="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
+            <span className="sr-only">{t("filters.searchLabel")}</span>
+            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy/45" />
+            <input
+              type="search"
+              value={filters.query}
+              onChange={(e) => setFilter("query", e.target.value)}
+              placeholder={t("filters.searchPlaceholder")}
+              className="h-10 w-full rounded-full bg-stone ring-1 ring-navy/15 ps-9 pe-4 text-sm font-medium text-navy placeholder:text-navy/45 transition-colors hover:bg-navy/5 focus:outline-none focus:ring-navy"
+            />
+          </label>
         </div>
 
         <div className="flex items-center gap-3">

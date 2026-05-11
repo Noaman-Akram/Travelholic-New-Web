@@ -379,6 +379,8 @@
     "heroSubline": "Forty-two homes across two areas of Cairo. Direct rates undercut the platforms — every home shows the savings.",
     "filters": {
       "title": "Filters",
+      "searchLabel": "Search homes",
+      "searchPlaceholder": "Search by home, area, amenity...",
       "destinations": "Destinations",
       "destinationsAny": "Any",
       "dates": "Dates",
@@ -610,18 +612,18 @@
   "bookingResult": {
     "loading": {
       "title": "Confirming your stay…",
-      "body": "We're verifying your payment with SuperPay. This usually takes a few seconds — don't close the page."
+      "body": "Hang tight. We’re confirming your payment and booking now."
     },
     "confirmed": {
       "eyebrow": "Booking confirmed",
       "title": "You're booked.",
-      "body": "We'll send a confirmation email and a WhatsApp message with check-in details shortly.",
-      "codeLabel": "Confirmation code",
+      "body": "Your payment is received and your stay is confirmed. We’ll send check-in details soon.",
+      "codeLabel": "Booking reference",
       "browseMore": "Browse more homes",
       "home": "Back to home"
     },
     "receipt": {
-      "title": "Payment receipt",
+      "title": "Booking details",
       "bookingRef": "Booking reference",
       "paymentRef": "Payment reference",
       "amount": "Amount paid",
@@ -632,8 +634,8 @@
       "download": "Download receipt"
     },
     "pending": {
-      "title": "Payment is processing",
-      "body": "We haven't received final confirmation from SuperPay yet. We'll email you the moment it lands. Reference: {ref}"
+      "title": "Almost done",
+      "body": "We’re still confirming the payment. Reference: {ref}"
     },
     "failed": {
       "title": "Payment didn't go through",
@@ -641,8 +643,8 @@
       "tryAgain": "Try again"
     },
     "paidNoRes": {
-      "title": "Payment received — finalising your booking",
-      "body": "Your card was charged successfully but we hit a snag confirming the dates with our system. The team has been notified and will reach out within an hour. Reference: {ref}"
+      "title": "Payment received",
+      "body": "We’re finalising your booking now. Reference: {ref}"
     },
     "error": {
       "title": "We couldn't load your booking",

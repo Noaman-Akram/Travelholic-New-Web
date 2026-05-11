@@ -6,7 +6,9 @@ import {
   newOrderEnvelope,
   saveOrder,
 } from "@/lib/superpay/orders";
+import { createBookingToken } from "@/lib/superpay/bookingToken";
 import { getHomeBySlug } from "@/lib/data/server";
+import { maskEmail, maskPhone, paymentAudit } from "@/lib/payment/auditLog";
 
 const CreateSchema = z.object({
   homeSlug: z.string().min(1),
@@ -46,6 +48,11 @@ const CreateSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   if (!SUPERPAY_AVAILABLE()) {
+    await paymentAudit({
+      level: "error",
+      event: "payment_create_blocked_superpay_not_configured",
+      source: "create",
+    });
     return NextResponse.json(
       { ok: false, error: "superpay-not-configured" },
       { status: 503 },
@@ -56,11 +63,22 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
+    await paymentAudit({
+      level: "warn",
+      event: "payment_create_invalid_json",
+      source: "create",
+    });
     return NextResponse.json({ ok: false, error: "invalid-json" }, { status: 400 });
   }
 
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) {
+    await paymentAudit({
+      level: "warn",
+      event: "payment_create_invalid_payload",
+      source: "create",
+      details: { issues: parsed.error.flatten() },
+    });
     return NextResponse.json(
       { ok: false, error: "invalid-payload", issues: parsed.error.flatten() },
       { status: 400 },
@@ -70,9 +88,23 @@ export async function POST(req: NextRequest) {
 
   const home = await getHomeBySlug(data.homeSlug);
   if (!home) {
+    await paymentAudit({
+      level: "warn",
+      event: "payment_create_home_not_found",
+      source: "create",
+      homeSlug: data.homeSlug,
+    });
     return NextResponse.json({ ok: false, error: "home-not-found" }, { status: 404 });
   }
   if (data.guests > home.capacity.guests) {
+    await paymentAudit({
+      level: "warn",
+      event: "payment_create_guest_capacity_exceeded",
+      source: "create",
+      homeSlug: data.homeSlug,
+      guests: data.guests,
+      details: { maxGuests: home.capacity.guests },
+    });
     return NextResponse.json(
       {
         ok: false,
@@ -83,17 +115,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const merchantOrderId = generateMerchantOrderId(data.homeSlug);
-  const appUrl =
-    (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin)
-      .replace(/\/$/, "");
-  const redirectionURL = `${appUrl}/${data.locale}/booking/success`;
-  const callbackURL = appUrl.startsWith("https://")
-    ? `${appUrl}/api/payment/webhook`
-    : undefined;
-
   const envelope = newOrderEnvelope({
-    merchantOrderId,
+    merchantOrderId: generateMerchantOrderId(data.homeSlug),
     homeSlug: data.homeSlug,
     checkIn: data.checkIn,
     checkOut: data.checkOut,
@@ -103,8 +126,48 @@ export async function POST(req: NextRequest) {
     pricing: data.pricing,
     locale: data.locale,
   });
+  const merchantOrderId = envelope.merchantOrderId;
+  const bookingToken = createBookingToken(envelope);
+  const appUrl =
+    (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin)
+      .replace(/\/$/, "");
+  const redirectionURL = withPaymentParams(`${appUrl}/${data.locale}/booking/success`, {
+    merchantOrderId,
+    bookingToken,
+  });
+  const callbackURL = appUrl.startsWith("https://")
+    ? withPaymentParams(`${appUrl}/api/payment/webhook`, {
+        merchantOrderId,
+        bookingToken,
+      })
+    : undefined;
 
   await saveOrder(envelope);
+  await paymentAudit({
+    event: "payment_create_order_saved",
+    source: "create",
+    merchantOrderId,
+    homeSlug: data.homeSlug,
+    checkIn: data.checkIn,
+    checkOut: data.checkOut,
+    guests: data.guests,
+    totalEGP: data.pricing.totalEGP,
+    details: {
+      locale: data.locale,
+      guest: {
+        firstName: data.guest.firstName,
+        lastName: data.guest.lastName,
+        email: data.guest.email,
+        phone: data.guest.phone,
+        country: data.guest.country,
+        specialRequests: data.guest.specialRequests || "",
+      },
+      guestEmailMasked: maskEmail(data.guest.email),
+      guestPhoneMasked: maskPhone(data.guest.phone),
+      callbackEnabled: Boolean(callbackURL),
+      tokenAttached: true,
+    },
+  });
 
   try {
     const { url } = await superpay.createIframeUrl({
@@ -119,6 +182,17 @@ export async function POST(req: NextRequest) {
       delayTime: 900,
       locale: data.locale,
     });
+    await paymentAudit({
+      event: "payment_create_superpay_url_created",
+      source: "create",
+      merchantOrderId,
+      homeSlug: data.homeSlug,
+      totalEGP: data.pricing.totalEGP,
+      details: {
+        redirectUrl: redirectionURL,
+        callbackEnabled: Boolean(callbackURL),
+      },
+    });
 
     return NextResponse.json({
       ok: true,
@@ -129,6 +203,16 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const code = err instanceof SuperPayError ? `superpay-${err.status}` : "superpay-error";
+    await paymentAudit({
+      level: "error",
+      event: "payment_create_superpay_url_failed",
+      source: "create",
+      merchantOrderId,
+      homeSlug: data.homeSlug,
+      totalEGP: data.pricing.totalEGP,
+      error: code,
+      message: err instanceof Error ? err.message : "unknown-error",
+    });
     if (process.env.NODE_ENV !== "production") {
       // eslint-disable-next-line no-console
       console.error("[payment/create] failed:", err);
@@ -138,4 +222,14 @@ export async function POST(req: NextRequest) {
       { status: 502 },
     );
   }
+}
+
+function withPaymentParams(
+  rawUrl: string,
+  params: { merchantOrderId: string; bookingToken: string },
+): string {
+  const url = new URL(rawUrl);
+  url.searchParams.set("ref", params.merchantOrderId);
+  url.searchParams.set("bt", params.bookingToken);
+  return url.toString();
 }

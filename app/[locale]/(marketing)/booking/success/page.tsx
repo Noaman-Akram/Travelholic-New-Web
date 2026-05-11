@@ -5,7 +5,7 @@ import { BookingSuccessClient } from "./client";
 
 type Props = {
   params: Promise<{ locale: AppLocale }>;
-  searchParams: Promise<{ ref?: string; response?: string; params?: string }>;
+  searchParams: Promise<{ ref?: string; bt?: string; response?: string; params?: string }>;
 };
 
 export type RedirectPaymentDetails = {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 export default async function BookingSuccessPage({ params, searchParams }: Props) {
   const { locale } = await params;
-  const { ref, response, params: superpayParams } = await searchParams;
+  const { ref, bt, response, params: superpayParams } = await searchParams;
   setRequestLocale(locale);
 
   const redirectDetails = getPaymentDetailsFromResponse(response ?? superpayParams);
@@ -36,6 +36,7 @@ export default async function BookingSuccessPage({ params, searchParams }: Props
   return (
     <BookingSuccessClient
       merchantOrderId={merchantOrderId}
+      bookingToken={bt ?? null}
       initialPayment={redirectDetails}
     />
   );

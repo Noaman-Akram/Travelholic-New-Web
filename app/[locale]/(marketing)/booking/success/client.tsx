@@ -54,9 +54,11 @@ const POLL_TIMEOUT_MS = 90_000;
 
 export function BookingSuccessClient({
   merchantOrderId,
+  bookingToken,
   initialPayment,
 }: {
   merchantOrderId: string | null;
+  bookingToken: string | null;
   initialPayment: RedirectPaymentDetails | null;
 }) {
   const t = useTranslations("bookingResult");
@@ -77,7 +79,9 @@ export function BookingSuccessClient({
     async function poll() {
       if (stoppedRef.current) return;
       try {
-        const res = await fetch(`/api/payment/status?ref=${encodeURIComponent(merchantOrderId!)}`, {
+        const params = new URLSearchParams({ ref: merchantOrderId! });
+        if (bookingToken) params.set("bt", bookingToken);
+        const res = await fetch(`/api/payment/status?${params.toString()}`, {
           cache: "no-store",
         });
         const data = (await res.json()) as StatusResponse;
@@ -168,7 +172,7 @@ export function BookingSuccessClient({
     return () => {
       stoppedRef.current = true;
     };
-  }, [merchantOrderId]);
+  }, [merchantOrderId, bookingToken]);
 
   return (
     <main className="min-h-[80vh] bg-stone py-24 lg:py-32">

@@ -23,7 +23,7 @@ export function BookingWidgetInline({
 
   const [destination, setDestination] = useState<string>("");
   const today = new Date();
-  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrow = addDays(today, 1);
   const [checkIn, setCheckIn] = useState<string>(formatISODate(today));
   const [checkOut, setCheckOut] = useState<string>(formatISODate(tomorrow));
   const [guests, setGuests] = useState<number>(2);
@@ -31,11 +31,18 @@ export function BookingWidgetInline({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (destination) params.set("destination", destination);
-    if (checkIn) params.set("checkIn", checkIn);
-    if (checkOut) params.set("checkOut", checkOut);
-    if (guests) params.set("guests", String(guests));
+    if (destination) params.set("dest", destination);
+    if (checkIn) params.set("ci", checkIn);
+    if (checkOut) params.set("co", checkOut);
+    if (guests) params.set("g", String(guests));
     router.push(`/homes?${params.toString()}`);
+  }
+
+  function handleCheckInChange(nextCheckIn: string) {
+    setCheckIn(nextCheckIn);
+    if (nextCheckIn && checkOut <= nextCheckIn) {
+      setCheckOut(formatISODate(addDays(new Date(`${nextCheckIn}T00:00:00`), 1)));
+    }
   }
 
   const isLight = tone === "light";
@@ -82,7 +89,7 @@ export function BookingWidgetInline({
             type="date"
             value={checkIn}
             min={formatISODate(today)}
-            onChange={(e) => setCheckIn(e.target.value)}
+            onChange={(e) => handleCheckInChange(e.target.value)}
             className="mt-1 w-full bg-transparent text-sm font-medium text-navy focus:outline-none"
           />
         </div>
@@ -144,5 +151,14 @@ export function BookingWidgetInline({
 }
 
 function formatISODate(date: Date): string {
-  return date.toISOString().split("T")[0] ?? "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
 }
