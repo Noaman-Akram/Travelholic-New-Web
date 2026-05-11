@@ -77,6 +77,13 @@ export async function GET(req: NextRequest) {
       fx: { rate: fx.rate, source: fx.source, fetchedAt: fx.fetchedAt },
     });
   } catch (err) {
+    if (err instanceof HostifyError && err.status === 400) {
+      let body: { error?: string } = {};
+      try { body = JSON.parse(err.body); } catch { /* raw body fine */ }
+      if (/not available|unavailable/i.test(body.error ?? err.body)) {
+        return NextResponse.json({ ok: false, error: "dates-unavailable", available: false });
+      }
+    }
     const code = err instanceof HostifyError ? `hostify-${err.status}` : "hostify-error";
     const message = err instanceof Error ? err.message : String(err);
     console.error("[booking/quote] Hostify error:", code, message, err);

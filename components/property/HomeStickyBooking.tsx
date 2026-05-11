@@ -94,8 +94,11 @@ export function HomeStickyBooking({ home }: { home: Home }) {
         const json = await res.json();
         if (!res.ok || !json.ok) {
           if (json?.error === "hostify-not-configured" || json?.error === "home-not-found") {
-            // Fall back silently to local calc
             setQuoteState({ kind: "idle" });
+            return;
+          }
+          if (json?.error === "dates-unavailable" || json?.available === false) {
+            setQuoteState({ kind: "unavailable" });
             return;
           }
           setQuoteState({ kind: "error", message: json?.error || `HTTP ${res.status}` });
