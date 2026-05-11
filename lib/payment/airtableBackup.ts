@@ -59,6 +59,7 @@ export async function createPaymentAirtableBackup(input: BackupInput): Promise<v
 
   const guestName = `${input.order.guest.firstName} ${input.order.guest.lastName}`.trim();
   const fields = {
+    Name: `${guestName || "Guest"} - ${input.order.homeSlug} - ${input.order.merchantOrderId}`,
     "Created At": new Date().toISOString(),
     Status: "Accepted",
     Source: input.source,
