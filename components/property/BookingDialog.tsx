@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, ArrowRight, ArrowLeft, Loader2, Lock, MessageCircle } from "lucide-react";
+import {
+  X,
+  ArrowRight,
+  ArrowLeft,
+  Loader2,
+  MessageCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/lib/currency/context";
@@ -52,8 +59,14 @@ export function BookingDialog({
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof GuestData, boolean>>
   >({});
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [paymentError, setPaymentError] = useState(false);
+  // Instant booking: submitting step 2 creates the Hostify reservation
+  // synchronously; on success the user lands on step 3 (confirmation).
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [confirmationRef, setConfirmationRef] = useState<string | null>(null);
+  const [bookingStatus, setBookingStatus] = useState<"accepted" | "lead" | null>(
+    null,
+  );
 
   const handleClose = (next: boolean) => {
     onOpenChange(next);
@@ -63,14 +76,17 @@ export function BookingDialog({
         setStep(1);
         setValidatedGuest(null);
         setFieldErrors({});
-        setPaymentError(false);
-        setPaymentLoading(false);
+        setBookingLoading(false);
+        setBookingError(null);
+        setConfirmationRef(null);
+        setBookingStatus(null);
       }, 250);
     }
   };
 
-  function handleStep2Submit(formData: FormData) {
+  async function handleStep2Submit(formData: FormData) {
     setFieldErrors({});
+    setBookingError(null);
 
     const raw = {
       firstName: String(formData.get("firstName") ?? ""),
@@ -96,16 +112,10 @@ export function BookingDialog({
     }
 
     setValidatedGuest(parsed.data);
-    setStep(3);
-  }
-
-  async function handlePay() {
-    if (!validatedGuest) return;
-    setPaymentLoading(true);
-    setPaymentError(false);
+    setBookingLoading(true);
 
     try {
-      const res = await fetch("/api/payment/create", {
+      const res = await fetch("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,35 +124,39 @@ export function BookingDialog({
           checkOut,
           nights: pricing.nights,
           guests,
-          guest: validatedGuest,
+          guest: parsed.data,
           pricing: {
             subtotalEGP: pricing.subtotalEGP,
             discountEGP: pricing.discountEGP,
             cleaningFeeEGP: pricing.cleaningFeeEGP,
             totalEGP: pricing.totalEGP,
+            currency: "EGP" as const,
           },
           locale,
+          source: "direct-website" as const,
+          timestamp: new Date().toISOString(),
         }),
       });
       const json = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
-        paymentUrl?: string;
-        merchantOrderId?: string;
+        ref?: string;
+        status?: "accepted" | "pending" | "lead";
         error?: string;
       };
 
-      if (!res.ok || !json.ok || !json.paymentUrl) {
-        setPaymentError(true);
-        setPaymentLoading(false);
+      if (!res.ok || !json.ok || !json.ref) {
+        setBookingError(json.error ?? "booking-failed");
+        setBookingLoading(false);
         return;
       }
 
-      // Redirect to SuperPay's hosted page. The user returns to
-      // /booking/success?ref=<merchantOrderId> after paying.
-      window.location.href = json.paymentUrl;
+      setConfirmationRef(json.ref);
+      setBookingStatus(json.status === "lead" ? "lead" : "accepted");
+      setBookingLoading(false);
+      setStep(3);
     } catch {
-      setPaymentError(true);
-      setPaymentLoading(false);
+      setBookingError("network");
+      setBookingLoading(false);
     }
   }
 
@@ -155,7 +169,9 @@ export function BookingDialog({
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim();
   const whatsappHref = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        `Hi Travelholic — I'm reserving ${home.title[locale]} (${checkIn} → ${checkOut}, ${guests} guests). Need help finalising payment.`,
+        confirmationRef
+          ? `Hi Travelholic — I just reserved ${home.title[locale]} (${checkIn} → ${checkOut}, ${guests} guests). Booking ref: ${confirmationRef}.`
+          : `Hi Travelholic — I'd like to reserve ${home.title[locale]} (${checkIn} → ${checkOut}, ${guests} guests).`,
       )}`
     : undefined;
 
@@ -171,14 +187,14 @@ export function BookingDialog({
                   ? t("step1.eyebrow")
                   : step === 2
                   ? t("step2.eyebrow")
-                  : t("payment.step")}
+                  : t("success.eyebrow")}
               </p>
               <Dialog.Title className="mt-1 text-h4-mobile lg:text-h4 font-medium leading-tight">
                 {step === 1
                   ? t("step1.title")
                   : step === 2
                   ? t("step2.title")
-                  : t("payment.title")}
+                  : t("success.title")}
               </Dialog.Title>
             </div>
             <Dialog.Close asChild>
@@ -340,47 +356,71 @@ export function BookingDialog({
                   {fieldErrors.agreeTerms ? (
                     <p className="mt-2 text-xs text-maroon">{t("step2.errors.terms")}</p>
                   ) : null}
+                  {bookingError ? (
+                    <div className="mt-5 rounded-2xl bg-maroon/5 ring-1 ring-maroon/30 px-4 py-3 text-sm text-maroon">
+                      {bookingError === "dates-unavailable"
+                        ? t("step2.errors.datesUnavailable")
+                        : t("step2.errors.booking")}
+                    </div>
+                  ) : null}
               </form>
             ) : (
               <div key="step3" className="p-5 sm:p-7">
-                  <p className="text-body text-navy/75 max-w-xl">{t("payment.intro")}</p>
-
-                  <div className="mt-6 rounded-2xl bg-stone-100 ring-1 ring-navy/10 p-5">
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="h-14 w-18 rounded-xl bg-navy/10 bg-cover bg-center shrink-0"
-                        style={{ backgroundImage: `url(${home.gallery[0]?.src ?? ""})` }}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium leading-tight truncate">
-                          {home.title[locale]}
-                        </p>
-                        <p className="text-xs text-navy/55 mt-0.5">
-                          {checkIn} → {checkOut} · {guests} {guests === 1 ? "guest" : "guests"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-5 pt-4 border-t border-navy/10 flex items-baseline justify-between">
-                      <span className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55">
-                        {t("payment.summary")}
-                      </span>
-                      <span className="text-h4-mobile lg:text-h4 font-medium tabular-nums">
-                        {totalEgp}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-xs text-navy/55">{t("payment.currencyNote")}</p>
-                  </div>
-
-                  <p className="mt-5 inline-flex items-center gap-2 text-xs text-navy/65">
-                    <Lock className="h-3.5 w-3.5" />
-                    {t("payment.cardSecure")}
+                <div className="flex flex-col items-center text-center max-w-xl mx-auto py-3">
+                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-olive/15 text-olive">
+                    <CheckCircle2 className="h-7 w-7" />
+                  </span>
+                  <h3 className="mt-5 text-h4-mobile lg:text-h4 font-medium tracking-tight-heading">
+                    {bookingStatus === "lead"
+                      ? t("success.leadHeadline")
+                      : t("success.headline")}
+                  </h3>
+                  <p className="mt-3 text-sm text-navy/70 text-pretty">
+                    {bookingStatus === "lead"
+                      ? t("success.leadIntro")
+                      : t("success.intro")}
                   </p>
+                </div>
 
-                  {paymentError ? (
-                    <div className="mt-5 rounded-2xl bg-maroon/5 ring-1 ring-maroon/30 px-4 py-3 text-sm text-maroon">
-                      {t("payment.errors.create")}
+                <div className="mt-6 rounded-2xl bg-stone-100 ring-1 ring-navy/10 p-5">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="h-14 w-18 rounded-xl bg-navy/10 bg-cover bg-center shrink-0"
+                      style={{ backgroundImage: `url(${home.gallery[0]?.src ?? ""})` }}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-tight truncate">
+                        {home.title[locale]}
+                      </p>
+                      <p className="text-xs text-navy/55 mt-0.5">
+                        {checkIn} → {checkOut} · {guests}{" "}
+                        {guests === 1 ? "guest" : "guests"}
+                      </p>
                     </div>
-                  ) : null}
+                  </div>
+                  <div className="mt-5 pt-4 border-t border-navy/10 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55">
+                        {t("success.refLabel")}
+                      </p>
+                      <p className="mt-1 font-mono font-medium tabular-nums text-navy">
+                        {confirmationRef}
+                      </p>
+                    </div>
+                    <div className="text-end">
+                      <p className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55">
+                        {t("success.totalLabel")}
+                      </p>
+                      <p className="mt-1 font-medium tabular-nums text-navy">
+                        {totalEgp}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="mt-5 text-xs text-navy/55 text-center">
+                  {t("success.emailNote")}
+                </p>
               </div>
             )}
           </div>
@@ -406,6 +446,7 @@ export function BookingDialog({
                   variant="ghost"
                   size="md"
                   onClick={() => setStep(1)}
+                  disabled={bookingLoading}
                 >
                   <ArrowLeft className="h-4 w-4 me-1 rtl:scale-x-[-1]" />
                   {t("step2.back")}
@@ -413,62 +454,47 @@ export function BookingDialog({
                 <button
                   type="submit"
                   form="bk-step2-form"
+                  disabled={bookingLoading}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-navy text-stone h-11 px-6 text-sm font-medium transition-colors hover:bg-navy-700 disabled:opacity-60"
                 >
-                  {t("step2.reserve")}
-                  <ArrowRight className="h-4 w-4 rtl:scale-x-[-1]" />
+                  {bookingLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
+                      {t("step2.reserving")}
+                    </>
+                  ) : (
+                    <>
+                      {t("step2.reserve")}
+                      <ArrowRight className="h-4 w-4 rtl:scale-x-[-1]" />
+                    </>
+                  )}
                 </button>
               </>
             ) : (
               <>
+                {whatsappHref ? (
+                  <Button asChild variant="ghost" size="md">
+                    <a
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Message us on WhatsApp"
+                    >
+                      <MessageCircle className="h-4 w-4 me-1.5" />
+                      {t("success.whatsappCta")}
+                    </a>
+                  </Button>
+                ) : (
+                  <span />
+                )}
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="primary"
                   size="md"
-                  onClick={() => setStep(2)}
-                  disabled={paymentLoading}
+                  onClick={() => handleClose(false)}
                 >
-                  <ArrowLeft className="h-4 w-4 me-1 rtl:scale-x-[-1]" />
-                  {t("step2.back")}
+                  {t("success.close")}
                 </Button>
-                <div className="flex items-center gap-2">
-                  {whatsappHref ? (
-                    <Button
-                      asChild
-                      variant="ghost"
-                      size="md"
-                      className="hidden sm:inline-flex"
-                    >
-                      <a
-                        href={whatsappHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Reserve via WhatsApp"
-                      >
-                        <MessageCircle className="h-4 w-4 me-1.5" />
-                        WhatsApp
-                      </a>
-                    </Button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={handlePay}
-                    disabled={paymentLoading}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-navy text-stone h-11 px-6 text-sm font-medium transition-colors hover:bg-navy-700 disabled:opacity-60"
-                  >
-                    {paymentLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
-                        {t("payment.redirecting")}
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-4 w-4" />
-                        {t("payment.primaryCta")}
-                      </>
-                    )}
-                  </button>
-                </div>
               </>
             )}
           </footer>

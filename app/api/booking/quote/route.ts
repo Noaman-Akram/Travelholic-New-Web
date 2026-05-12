@@ -53,9 +53,43 @@ export async function GET(req: NextRequest) {
       includeFees: true,
     });
 
-    if (!res.success || !res.price) {
+    // Hostify uses `{ success: false, error: "..." }` to convey two
+    // different things:
+    //   (a) hard API failures (auth, listing-not-found, bad params, etc.)
+    //   (b) "the chosen dates aren't available" — a normal business
+    //       response we should NOT treat as a 502, because the booking
+    //       widget needs to react ("try different dates") instead of
+    //       showing "live quote unavailable".
+    if (!res.success) {
+      const rawError = typeof (res as unknown as { error?: unknown }).error === "string"
+        ? ((res as unknown as { error: string }).error)
+        : "";
+      const isUnavailable = /not\s+available|unavailable|blocked|booked/i.test(
+        rawError,
+      );
+      if (isUnavailable) {
+        return NextResponse.json(
+          {
+            ok: true,
+            available: false,
+            reason: "dates-unavailable",
+            message: rawError || "These dates are not available",
+          },
+          { status: 200 },
+        );
+      }
       return NextResponse.json(
-        { ok: false, error: "no-quote", message: "Hostify returned no quote" },
+        {
+          ok: false,
+          error: "no-quote",
+          message: rawError || "Hostify returned no quote",
+        },
+        { status: 502 },
+      );
+    }
+    if (!res.price) {
+      return NextResponse.json(
+        { ok: false, error: "no-quote", message: "Hostify returned no price" },
         { status: 502 },
       );
     }
@@ -77,11 +111,44 @@ export async function GET(req: NextRequest) {
       fx: { rate: fx.rate, source: fx.source, fetchedAt: fx.fetchedAt },
     });
   } catch (err) {
+    // Hostify communicates "dates not available" as HTTP 400 with a
+    // JSON body like { success: false, error: "The period is not
+    // available" }. Our request<> helper throws HostifyError on non-2xx
+    // status, so we parse the body here and downgrade to the
+    // "available: false" UX path when applicable.
+    if (err instanceof HostifyError) {
+      let parsed: { success?: boolean; error?: string } | null = null;
+      try {
+        parsed = JSON.parse(err.body);
+      } catch {
+        // body isn't JSON — fall through to generic error response
+      }
+      const rawError = typeof parsed?.error === "string" ? parsed.error : "";
+      const isUnavailable = /not\s+available|unavailable|blocked|booked/i.test(
+        rawError,
+      );
+      if (isUnavailable) {
+        return NextResponse.json(
+          {
+            ok: true,
+            available: false,
+            reason: "dates-unavailable",
+            message: rawError,
+          },
+          { status: 200 },
+        );
+      }
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `hostify-${err.status}`,
+          message: rawError || undefined,
+        },
+        { status: 502 },
+      );
+    }
     return NextResponse.json(
-      {
-        ok: false,
-        error: err instanceof HostifyError ? `hostify-${err.status}` : "hostify-error",
-      },
+      { ok: false, error: "hostify-error" },
       { status: 502 },
     );
   }

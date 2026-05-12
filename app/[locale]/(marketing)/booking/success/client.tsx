@@ -6,19 +6,9 @@ import { Check, Loader2, AlertCircle } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { KeyholeMark } from "@/components/brand/KeyholeMark";
-import { trackBookingSubmitted } from "@/lib/analytics/track";
 
 type StatusResponse =
-  | {
-      ok: true;
-      state: "confirmed";
-      confirmationCode: string;
-      hostifyReservationId?: number;
-      paidAt?: string;
-      homeSlug?: string;
-      nights?: number;
-      totalEGP?: number;
-    }
+  | { ok: true; state: "confirmed"; confirmationCode: string; hostifyReservationId?: number; paidAt?: string }
   | { ok: true; state: "pending"; orderStatus?: string; reason?: string }
   | { ok: true; state: "failed"; orderStatus?: string }
   | { ok: false; state?: "paid-no-reservation" | "error"; error: string; paymentgwOrderId?: string }
@@ -43,7 +33,6 @@ export function BookingSuccessClient({
   const t = useTranslations("bookingResult");
   const [view, setView] = useState<View>({ kind: "loading" });
   const stoppedRef = useRef(false);
-  const conversionFiredRef = useRef(false);
 
   useEffect(() => {
     if (!merchantOrderId) {
@@ -69,18 +58,6 @@ export function BookingSuccessClient({
             code: data.confirmationCode,
             reservationId: data.hostifyReservationId,
           });
-          if (!conversionFiredRef.current) {
-            conversionFiredRef.current = true;
-            trackBookingSubmitted({
-              ref: data.confirmationCode || merchantOrderId!,
-              homeSlug: data.homeSlug ?? "unknown",
-              hostifyId: data.hostifyReservationId,
-              nights: data.nights ?? 0,
-              totalEGP: data.totalEGP ?? 0,
-              currency: "EGP",
-              status: "accepted",
-            });
-          }
           stoppedRef.current = true;
           return;
         }

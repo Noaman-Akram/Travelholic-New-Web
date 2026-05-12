@@ -5,11 +5,12 @@ import { getHomeBySlug } from "@/lib/data/server";
 import { homeHostifyPrimaryId } from "@/lib/data";
 import { egpToUsd } from "@/lib/fx/rates";
 
-// Booking status to create in Hostify. "pending" = host accepts manually
-// (typical when payment is collected outside Hostify or via a follow-up
-// payment link). Switch to "accepted" once payment is collected on this
-// site directly.
-const HOSTIFY_BOOKING_STATUS: "pending" | "accepted" = "pending";
+// Booking status to create in Hostify. "accepted" = the reservation is
+// confirmed the moment the guest submits the form — no manual host
+// approval queue, no payment gate. Travelholic's current commercial
+// model is instant direct booking without on-site payment; switch back
+// to "pending" only if you reintroduce an approval / payment step.
+const HOSTIFY_BOOKING_STATUS: "pending" | "accepted" = "accepted";
 
 const BookingSchema = z.object({
   homeSlug: z.string().min(1),

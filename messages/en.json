@@ -568,13 +568,16 @@
       "terms": "I've read and agree to the booking terms.",
       "back": "Back",
       "reserve": "Reserve",
+      "reserving": "Reserving…",
       "errors": {
         "firstName": "Tell us your first name.",
         "lastName": "Tell us your last name.",
         "email": "Drop a working email so we can send the confirmation.",
         "phone": "We'll only use this for arrival logistics.",
         "country": "Pick a country so the team can plan.",
-        "terms": "Please confirm you've read the terms."
+        "terms": "Please confirm you've read the terms.",
+        "booking": "We couldn't confirm your reservation. Try again, or message us on WhatsApp.",
+        "datesUnavailable": "These dates are no longer available. Pick different dates and we'll re-quote."
       }
     },
     "step3": {
@@ -591,18 +594,18 @@
       "submit": "Something went wrong. Try once more, or message us on WhatsApp."
     },
     "whatsappPrefill": "Hi Travelholic — I just booked {home} from {checkIn} to {checkOut} for {guests, plural, =1 {1 guest} other {# guests}}. Total {total}. Booking ref: {ref}.",
-    "payment": {
-      "step": "Step 3 of 3",
-      "title": "Payment",
-      "intro": "You'll be taken to our secure payment page to complete your booking. Charges only post once payment is confirmed.",
-      "summary": "Total to charge",
-      "currencyNote": "EGP only — exchange rates locked at booking.",
-      "cardSecure": "Card details handled by SuperPay (PCI DSS). We never see them.",
-      "primaryCta": "Continue to payment",
-      "redirecting": "Opening secure payment…",
-      "errors": {
-        "create": "Couldn't open the payment page. Try again or contact us on WhatsApp."
-      }
+    "success": {
+      "eyebrow": "Confirmed",
+      "title": "You're booked.",
+      "headline": "Reservation confirmed.",
+      "intro": "We've sent the confirmation to your email. The team will reach out on WhatsApp within the day to brief you on check-in.",
+      "leadHeadline": "We've got your details.",
+      "leadIntro": "Our team will reach out within the day to confirm availability and brief you on next steps.",
+      "refLabel": "Confirmation code",
+      "totalLabel": "Total",
+      "emailNote": "Keep this confirmation code — it's also in the email we just sent.",
+      "whatsappCta": "Message the team",
+      "close": "Done"
     }
   },
   "bookingResult": {

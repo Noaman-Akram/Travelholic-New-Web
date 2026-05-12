@@ -31,9 +31,6 @@ export async function GET(req: NextRequest) {
       confirmationCode: order.hostify.confirmationCode,
       hostifyReservationId: order.hostify.reservationId,
       paidAt: order.payment?.completedAt,
-      homeSlug: order.homeSlug,
-      nights: order.nights,
-      totalEGP: order.pricing.totalEGP,
     });
   }
 
@@ -126,9 +123,6 @@ export async function GET(req: NextRequest) {
       confirmationCode: reservation.confirmationCode,
       hostifyReservationId: reservation.reservationId,
       paidAt: status.updatedTime,
-      homeSlug: order.homeSlug,
-      nights: order.nights,
-      totalEGP: order.pricing.totalEGP,
     });
   } catch (err) {
     const code = err instanceof SuperPayError ? `superpay-${err.status}` : "status-error";

@@ -3,13 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { subscribeNewsletter } from "@/app/actions/newsletter";
-import { trackNewsletterSubscribed, type AnalyticsSurface } from "@/lib/analytics/track";
 
-export function FooterNewsletter({
-  surface = "footer",
-}: {
-  surface?: AnalyticsSurface;
-} = {}) {
+export function FooterNewsletter() {
   const t = useTranslations("footer.newsletter");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
@@ -19,10 +14,7 @@ export function FooterNewsletter({
     const formData = new FormData(e.currentTarget);
     const result = await subscribeNewsletter(formData);
     setStatus(result.ok ? "success" : "error");
-    if (result.ok) {
-      e.currentTarget.reset();
-      trackNewsletterSubscribed({ surface });
-    }
+    if (result.ok) e.currentTarget.reset();
   }
 
   return (
