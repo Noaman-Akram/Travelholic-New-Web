@@ -606,6 +606,20 @@
       "emailNote": "Keep this confirmation code — it's also in the email we just sent.",
       "whatsappCta": "Message the team",
       "close": "Done"
+    },
+    "payment": {
+      "step": "Step 3 of 3",
+      "title": "Payment",
+      "intro": "Your dates are held for the next 15 minutes. Complete payment on the secure SuperPay page to confirm the reservation.",
+      "summary": "Total to charge",
+      "holdRefLabel": "Hold ref:",
+      "currencyNote": "Charged in EGP. Card details handled by SuperPay (PCI DSS) — we never see them.",
+      "cardSecure": "Secured by SuperPay. PCI DSS compliant.",
+      "primaryCta": "Continue to payment",
+      "redirecting": "Opening secure payment…",
+      "errors": {
+        "create": "Couldn't open the payment page. Try again, or contact us on WhatsApp — your dates are still held."
+      }
     }
   },
   "bookingResult": {

@@ -87,7 +87,13 @@ export type WebhookNotificationParams = {
   descriptionArabic?: string;
 };
 
-/** Internal pending-booking record stored on disk between create and webhook. */
+/**
+ * Internal audit envelope for an in-flight payment. From phase 8 onward
+ * the Hostify reservation is the lifecycle source of truth (it goes
+ * pending → accepted/cancelled_by_*), so these fields are kept mainly
+ * for debugging webhook arrivals. `hostifyReservationId` is the link
+ * between this record and Hostify.
+ */
 export type PendingBooking = {
   merchantOrderId: string;
   createdAt: string;          // ISO
@@ -112,6 +118,9 @@ export type PendingBooking = {
     discountEGP: number;
   };
   locale: "en" | "ar";
+  /** Hostify reservation already created (status=pending) before payment. */
+  hostifyReservationId?: number;
+  hostifyConfirmationCode?: string;
   /** Filled by webhook when payment completes. */
   payment?: {
     paymentgwOrderId: string;

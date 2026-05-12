@@ -2,12 +2,18 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { superpay, SUPERPAY_AVAILABLE, SuperPayError } from "@/lib/superpay/client";
 import {
-  generateMerchantOrderId,
+  buildMerchantOrderIdFromReservation,
   newOrderEnvelope,
   saveOrder,
 } from "@/lib/superpay/orders";
 
 const CreateSchema = z.object({
+  // The Hostify reservation that the BookingDialog just created with
+  // status="pending". We embed its numeric id into the SuperPay
+  // merchantOrderId so the webhook can find this exact reservation when
+  // the payment lifecycle resolves.
+  hostifyReservationId: z.number().int().positive(),
+  hostifyConfirmationCode: z.string().min(1).max(80),
   homeSlug: z.string().min(1),
   checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -32,16 +38,18 @@ const CreateSchema = z.object({
 });
 
 /**
- * Step 1 of the payment flow.
+ * Hands the customer off to SuperPay.
  *
- * Builds a unique merchantOrderId, persists the pending booking on disk,
- * asks SuperPay for a hosted-iframe URL, and returns that URL to the
- * client. The client then either redirects or opens the URL in an iframe
- * popup.
+ * Preconditions: /api/booking has already created a Hostify reservation
+ * with status="pending" — its numeric id and confirmation_code travel
+ * in the request body. Hostify is the source of truth for the booking
+ * lifecycle; this route only builds the SuperPay iframe URL and saves
+ * a thin audit envelope of our own.
  *
- * Important: we do NOT create the Hostify reservation here. That happens
- * in /api/payment/webhook AFTER SuperPay confirms PAY_COMPLETED. This
- * prevents orphan reservations when the customer abandons the payment.
+ * The `merchantOrderId` we hand to SuperPay encodes the Hostify
+ * reservation id so the webhook (which is unsigned) can locate the
+ * exact reservation to promote → accepted on PAY_COMPLETED, or
+ * cancel via cancelled_by_guest on PAY_FAILED / PAY_CANCELLED.
  */
 export async function POST(req: NextRequest) {
   if (!SUPERPAY_AVAILABLE()) {
@@ -67,29 +75,45 @@ export async function POST(req: NextRequest) {
   }
   const data = parsed.data;
 
-  const merchantOrderId = generateMerchantOrderId(data.homeSlug);
+  // Format: TH-<hostify-id>-<short-suffix>. The suffix lets the same
+  // reservation be retried with a fresh SuperPay order if the first
+  // attempt times out, without collisions on SuperPay's side.
+  const merchantOrderId = buildMerchantOrderIdFromReservation(
+    data.hostifyReservationId,
+  );
 
-  const envelope = newOrderEnvelope({
-    merchantOrderId,
-    homeSlug: data.homeSlug,
-    checkIn: data.checkIn,
-    checkOut: data.checkOut,
-    nights: data.nights,
-    guests: data.guests,
-    guest: data.guest,
-    pricing: data.pricing,
-    locale: data.locale,
-  });
-
-  await saveOrder(envelope);
+  // Thin local audit envelope — Hostify is the lifecycle store but
+  // having a side trail of "what we asked SuperPay for" is invaluable
+  // when debugging webhook arrivals. Best-effort: failures don't block
+  // the payment.
+  try {
+    await saveOrder(
+      newOrderEnvelope({
+        merchantOrderId,
+        homeSlug: data.homeSlug,
+        checkIn: data.checkIn,
+        checkOut: data.checkOut,
+        nights: data.nights,
+        guests: data.guests,
+        guest: data.guest,
+        pricing: data.pricing,
+        locale: data.locale,
+        hostifyReservationId: data.hostifyReservationId,
+        hostifyConfirmationCode: data.hostifyConfirmationCode,
+      }),
+    );
+  } catch {
+    // Audit save is non-blocking.
+  }
 
   try {
     const { url } = await superpay.createIframeUrl({
       merchantOrderId,
       amount: data.pricing.totalEGP,
       currency: "EGP",
-      // Use the email as the customer identifier so SuperPay can offer
-      // returning-card tokenization on subsequent bookings.
+      // Email as the customer identifier so SuperPay can tokenize the
+      // card for returning bookings (per V1.3 spec, clientId is optional
+      // but enables saved-card flow on subsequent visits).
       clientId: data.guest.email,
     });
 
@@ -101,7 +125,8 @@ export async function POST(req: NextRequest) {
       currency: "EGP",
     });
   } catch (err) {
-    const code = err instanceof SuperPayError ? `superpay-${err.status}` : "superpay-error";
+    const code =
+      err instanceof SuperPayError ? `superpay-${err.status}` : "superpay-error";
     if (process.env.NODE_ENV !== "production") {
       // eslint-disable-next-line no-console
       console.error("[payment/create] failed:", err);

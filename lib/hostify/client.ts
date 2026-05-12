@@ -115,16 +115,24 @@ async function request<T>(
 }
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
+  return jsonRequest<T>("POST", path, body);
+}
+
+async function jsonRequest<T>(
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
+  path: string,
+  body: unknown,
+): Promise<T> {
   const key = getKey();
   if (!key) throw new HostifyError(0, "HOSTIFY_API_KEY not set");
   const res = await fetch(getBase() + path, {
-    method: "POST",
+    method,
     headers: {
       "x-api-key": key,
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
   });
   const text = await res.text();
@@ -225,4 +233,88 @@ export const hostify = {
       ...(input.status ? { status: input.status } : {}),
     });
   },
+
+  /**
+   * Fetches a single reservation by its numeric Hostify id. Not cached —
+   * the payment webhook depends on a real-time read.
+   */
+  async getReservation(id: number): Promise<HostifyReservationResponse> {
+    return request<HostifyReservationResponse>(
+      `/reservations/${id}`,
+      undefined,
+      { revalidate: false },
+    );
+  },
+
+  /**
+   * Updates the status of a Hostify reservation. Allowed transitions
+   * (verified via Hostify's own 400 error message — the docs portal is
+   * gated, so this is the canonical list):
+   *
+   *   accepted
+   *   cancelled_by_host
+   *   cancelled_by_guest
+   *   denied
+   *   no_show
+   *
+   * Trying any other value returns HTTP 400 with a list of valid options.
+   * Idempotent on Hostify's side — re-applying the same status is a no-op
+   * but still returns 200.
+   */
+  async updateReservation(
+    id: number,
+    body: { status: HostifyReservationStatus; note?: string },
+  ): Promise<HostifyReservationResponse> {
+    return jsonRequest<HostifyReservationResponse>(
+      "PUT",
+      `/reservations/${id}`,
+      body,
+    );
+  },
+
+  /**
+   * Lists reservations matching the given filters. Used by the expiry
+   * sweeper cron to find pending reservations older than 15 minutes.
+   * Hostify caps per_page implicitly; callers should paginate.
+   */
+  async listReservations(args: {
+    status?: HostifyReservationStatus | "pending";
+    page?: number;
+    perPage?: number;
+  } = {}): Promise<HostifyReservationListResponse> {
+    return request<HostifyReservationListResponse>(
+      "/reservations",
+      {
+        ...(args.status ? { status: args.status } : {}),
+        page: args.page ?? 1,
+        per_page: args.perPage ?? 50,
+      },
+      { revalidate: false },
+    );
+  },
+};
+
+export type HostifyReservationStatus =
+  | "accepted"
+  | "cancelled_by_host"
+  | "cancelled_by_guest"
+  | "denied"
+  | "no_show";
+
+export type HostifyReservationSummary = {
+  id: number;
+  confirmation_code: string;
+  status: string;
+  source: string | null;
+  checkIn: string;
+  checkOut: string;
+  created_at?: string;
+  // Plus many other fields we don't model — see Hostify docs.
+};
+
+export type HostifyReservationListResponse = {
+  success: boolean;
+  reservations: HostifyReservationSummary[];
+  total?: number;
+  next_page?: number | null;
 };
