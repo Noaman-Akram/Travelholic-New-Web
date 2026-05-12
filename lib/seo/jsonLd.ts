@@ -126,20 +126,16 @@ export function localBusiness(locale: AppLocale): JsonLdValue {
     image: `${url}/brand/logo-light.png`,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "220B, South Academy, New Cairo",
+      streetAddress: "Lotus, New Cairo",
       addressLocality: "Cairo",
       addressRegion: "Cairo Governorate",
       addressCountry: "EG",
     },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: 30.0356762,
-      longitude: 31.4281785,
-    },
-    email: "hello@travelholiceg.com",
-    telephone: "+20 111 222 0844",
+    telephone: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER
+      ? `+${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}`
+      : undefined,
     url: localeUrl(locale, "/contact"),
-    openingHours: "Mo,Tu,We,Th,Fr,Sa,Su 00:00-24:00",
+    openingHours: "Mo,Tu,We,Th,Fr,Sa,Su 09:00-24:00",
   };
 }
 

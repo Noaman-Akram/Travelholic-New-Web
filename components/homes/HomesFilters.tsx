@@ -5,7 +5,7 @@ import { destinations } from "@/lib/data";
 import type { AmenityKey } from "@/lib/data/types";
 import type { AppLocale } from "@/i18n/routing";
 import { cn } from "@/lib/utils/cn";
-import { useHomesFilters, type HomesFilters as HomesFiltersState } from "./useHomesFilters";
+import { useHomesFilters, PRICE_BOUNDS, type HomesFilters as HomesFiltersState } from "./useHomesFilters";
 
 const COMMON_AMENITIES: AmenityKey[] = [
   "wifi",
@@ -24,7 +24,7 @@ export function HomesFilters({ inSheet = false }: { inSheet?: boolean }) {
   const t = useTranslations("homes.filters");
   const tAmenities = useTranslations("homeDetail.amenityLabels");
   const locale = useLocale() as AppLocale;
-  const { filters, setFilter, clearAll, isFiltering, priceBounds } = useHomesFilters();
+  const { filters, setFilter, clearAll, isFiltering } = useHomesFilters();
 
   const labelClass = "text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55";
   const containerClass = inSheet
@@ -152,13 +152,11 @@ export function HomesFilters({ inSheet = false }: { inSheet?: boolean }) {
             </span>
             <input
               type="number"
-              min={priceBounds.min}
+              min={PRICE_BOUNDS.min}
               max={filters.priceMax}
               step={100}
               value={filters.priceMin}
-              onChange={(e) =>
-                setFilter("priceMin", clampPrice(Number(e.target.value), filters, priceBounds))
-              }
+              onChange={(e) => setFilter("priceMin", clampPrice(Number(e.target.value), filters))}
               className="mt-1 w-full bg-transparent text-sm focus:outline-none tabular-nums"
             />
           </label>
@@ -169,14 +167,11 @@ export function HomesFilters({ inSheet = false }: { inSheet?: boolean }) {
             <input
               type="number"
               min={filters.priceMin}
-              max={priceBounds.max}
+              max={PRICE_BOUNDS.max}
               step={100}
               value={filters.priceMax}
               onChange={(e) =>
-                setFilter(
-                  "priceMax",
-                  clampPrice(Number(e.target.value), filters, priceBounds, "max"),
-                )
+                setFilter("priceMax", clampPrice(Number(e.target.value), filters, "max"))
               }
               className="mt-1 w-full bg-transparent text-sm focus:outline-none tabular-nums"
             />
@@ -241,12 +236,11 @@ export function HomesFilters({ inSheet = false }: { inSheet?: boolean }) {
 function clampPrice(
   value: number,
   current: HomesFiltersState,
-  bounds: { min: number; max: number },
   side: "min" | "max" = "min",
 ): number {
-  if (Number.isNaN(value)) return side === "min" ? bounds.min : bounds.max;
+  if (Number.isNaN(value)) return side === "min" ? PRICE_BOUNDS.min : PRICE_BOUNDS.max;
   if (side === "min") {
-    return Math.max(bounds.min, Math.min(value, current.priceMax - 100));
+    return Math.max(PRICE_BOUNDS.min, Math.min(value, current.priceMax - 100));
   }
-  return Math.min(bounds.max, Math.max(value, current.priceMin + 100));
+  return Math.min(PRICE_BOUNDS.max, Math.max(value, current.priceMin + 100));
 }

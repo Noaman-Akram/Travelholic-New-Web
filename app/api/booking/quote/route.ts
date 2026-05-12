@@ -3,7 +3,6 @@ import { z } from "zod";
 import { hostify, HOSTIFY_AVAILABLE, HostifyError } from "@/lib/hostify/client";
 import { getHomeBySlug } from "@/lib/data/server";
 import { homeHostifyPrimaryId } from "@/lib/data";
-import { getEgpPerUsd } from "@/lib/fx/rates";
 
 const QuoteSchema = z.object({
   homeSlug: z.string().min(1),
@@ -12,6 +11,13 @@ const QuoteSchema = z.object({
   guests: z.number().int().min(1).max(20),
   pets: z.number().int().min(0).max(5).optional(),
 });
+
+const EGP_PER_USD = (() => {
+  const raw = process.env.NEXT_PUBLIC_EGP_PER_USD;
+  if (!raw) return 50;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 50;
+})();
 
 /**
  * Live price quote from Hostify for the chosen dates + guests.
@@ -61,7 +67,6 @@ export async function GET(req: NextRequest) {
     }
 
     const p = res.price;
-    const fx = await getEgpPerUsd();
     return NextResponse.json({
       ok: true,
       available: p.available !== false,
@@ -70,11 +75,10 @@ export async function GET(req: NextRequest) {
       basePriceUsd: p.base_price ?? 0,
       cleaningFeeUsd: p.cleaning_fee ?? 0,
       totalUsd: p.total ?? p.price ?? 0,
-      // EGP equivalents using the live FX rate
-      basePriceEgp: Math.round((p.base_price ?? 0) * fx.rate),
-      cleaningFeeEgp: Math.round((p.cleaning_fee ?? 0) * fx.rate),
-      totalEgp: Math.round((p.total ?? p.price ?? 0) * fx.rate),
-      fx: { rate: fx.rate, source: fx.source, fetchedAt: fx.fetchedAt },
+      // EGP equivalents using our static FX
+      basePriceEgp: Math.round((p.base_price ?? 0) * EGP_PER_USD),
+      cleaningFeeEgp: Math.round((p.cleaning_fee ?? 0) * EGP_PER_USD),
+      totalEgp: Math.round((p.total ?? p.price ?? 0) * EGP_PER_USD),
     });
   } catch (err) {
     return NextResponse.json(

@@ -20,29 +20,24 @@ export type HomesFilters = {
   instantBook: boolean;
 };
 
-const PRICE_FALLBACK_MIN = 1000;
-const PRICE_FALLBACK_MAX = 13000;
+const PRICE_DEFAULT_MIN = 1500;
+const PRICE_DEFAULT_MAX = 13000;
 
-function computePriceBounds(homes: Home[]): { min: number; max: number } {
-  if (homes.length === 0) {
-    return { min: PRICE_FALLBACK_MIN, max: PRICE_FALLBACK_MAX };
-  }
-  let lo = Infinity;
-  let hi = -Infinity;
-  for (const h of homes) {
-    const p = h.pricing.nightlyEGP;
-    if (p < lo) lo = p;
-    if (p > hi) hi = p;
-  }
-  return {
-    min: Math.max(0, Math.floor(lo / 100) * 100),
-    max: Math.ceil(hi / 100) * 100,
-  };
-}
+const DEFAULT_FILTERS: HomesFilters = {
+  destinations: [],
+  checkIn: null,
+  checkOut: null,
+  guests: null,
+  minBedrooms: null,
+  priceMin: PRICE_DEFAULT_MIN,
+  priceMax: PRICE_DEFAULT_MAX,
+  amenities: [],
+  instantBook: false,
+};
 
 export const PRICE_BOUNDS = {
-  min: PRICE_FALLBACK_MIN,
-  max: PRICE_FALLBACK_MAX,
+  min: PRICE_DEFAULT_MIN,
+  max: PRICE_DEFAULT_MAX,
 };
 
 export function useHomesFilters() {
@@ -50,8 +45,6 @@ export function useHomesFilters() {
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
   const homes = useHomesData();
-
-  const priceBounds = useMemo(() => computePriceBounds(homes), [homes]);
 
   const filters = useMemo<HomesFilters>(() => {
     const dest = searchParams.get("dest");
@@ -63,8 +56,8 @@ export function useHomesFilters() {
     const a = searchParams.get("a");
     const ib = searchParams.get("ib");
 
-    let priceMin = priceBounds.min;
-    let priceMax = priceBounds.max;
+    let priceMin = PRICE_DEFAULT_MIN;
+    let priceMax = PRICE_DEFAULT_MAX;
     if (p) {
       const [pMin, pMax] = p.split("-");
       const parsedMin = pMin ? Number(pMin) : NaN;
@@ -84,7 +77,7 @@ export function useHomesFilters() {
       amenities: a ? (a.split(",").filter(Boolean) as AmenityKey[]) : [],
       instantBook: ib === "1",
     };
-  }, [searchParams, priceBounds]);
+  }, [searchParams]);
 
   const view = (searchParams.get("view") as HomesView) || "grid";
   const sort = (searchParams.get("sort") as HomesSort) || "recommended";
@@ -132,7 +125,7 @@ export function useHomesFilters() {
           case "priceMax": {
             const min = key === "priceMin" ? Number(value) : filters.priceMin;
             const max = key === "priceMax" ? Number(value) : filters.priceMax;
-            if (min === priceBounds.min && max === priceBounds.max) {
+            if (min === PRICE_DEFAULT_MIN && max === PRICE_DEFAULT_MAX) {
               next.delete("p");
             } else {
               next.set("p", `${min}-${max}`);
@@ -146,7 +139,7 @@ export function useHomesFilters() {
         }
       });
     },
-    [setParams, filters.priceMin, filters.priceMax, priceBounds.min, priceBounds.max],
+    [setParams, filters.priceMin, filters.priceMax],
   );
 
   const setView = useCallback(
@@ -181,8 +174,8 @@ export function useHomesFilters() {
     filters.destinations.length > 0 ||
     filters.guests !== null ||
     filters.minBedrooms !== null ||
-    filters.priceMin !== priceBounds.min ||
-    filters.priceMax !== priceBounds.max ||
+    filters.priceMin !== PRICE_DEFAULT_MIN ||
+    filters.priceMax !== PRICE_DEFAULT_MAX ||
     filters.amenities.length > 0 ||
     filters.instantBook ||
     !!filters.checkIn ||
@@ -198,7 +191,7 @@ export function useHomesFilters() {
     sort,
     setSort,
     isFiltering,
-    priceBounds,
+    DEFAULTS: DEFAULT_FILTERS,
   };
 }
 

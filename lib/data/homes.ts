@@ -56,7 +56,7 @@ function makeReviews(): Review[] {
       date: "2026-01-10",
       text: {
         en: "Lovely stay, only nitpick is the building elevator — slow but charming.",
-        ar: "إقامة جميلة، الانتقاد الوحيد هو مصعد العمارة — بطيء بس له طابع.",
+        ar: "إقامة جميلة، الانتقاد الوحيد هو أصانصير العمارة — بطيء بس له طابع.",
       },
       source: "airbnb",
     },
@@ -436,7 +436,7 @@ export const homes: Home[] = [
   // ─── GG Buildings — Golden Gates (2 homes) ─────────────────────────────
   {
     slug: "gg-buildings-studio",
-    title: { en: "GG Buildings Studio", ar: "استوديو عمارات جولدن جاتس" },
+    title: { en: "GG Buildings Studio", ar: "استوديو عمارات البوابات الذهبية" },
     destinationSlug: "gg-buildings",
     type: "studio",
     capacity: { guests: 2, bedrooms: 0, beds: 1, baths: 1 },
@@ -454,7 +454,7 @@ export const homes: Home[] = [
     },
     description: {
       en: "An entry-level studio inside Golden Gates — clean lines, full compound access, and a price that works for long stays.",
-      ar: "استوديو في بداية الفئة داخل جولدن جاتس — خطوط نظيفة، وصول كامل لمرافق الكومباوند، وسعر يعمل للإقامات الطويلة.",
+      ar: "استوديو في بداية الفئة داخل البوابات الذهبية — خطوط نظيفة، وصول كامل لمرافق الكومباوند، وسعر يعمل للإقامات الطويلة.",
     },
     gallery: makeGallery("th-gg-studio", 8),
     houseRules: {
@@ -475,7 +475,7 @@ export const homes: Home[] = [
   },
   {
     slug: "gg-buildings-1br",
-    title: { en: "GG Buildings 1BR", ar: "غرفة واحدة — عمارات جولدن جاتس" },
+    title: { en: "GG Buildings 1BR", ar: "غرفة واحدة — عمارات البوابات الذهبية" },
     destinationSlug: "gg-buildings",
     type: "1br",
     capacity: { guests: 2, bedrooms: 1, beds: 1, baths: 1 },
@@ -514,7 +514,7 @@ export const homes: Home[] = [
   // ─── GG Villas — Golden Gates (1 home) ─────────────────────────────────
   {
     slug: "gg-villa-3br",
-    title: { en: "GG Villa — 3BR with Garden", ar: "فيلا جولدن جاتس — 3 غرف بحديقة" },
+    title: { en: "GG Villa — 3BR with Garden", ar: "فيلا البوابات الذهبية — 3 غرف بحديقة" },
     destinationSlug: "gg-villas",
     type: "3br",
     capacity: { guests: 6, bedrooms: 3, beds: 4, baths: 3 },

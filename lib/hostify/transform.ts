@@ -14,6 +14,12 @@ import type {
 } from "@/lib/data/types";
 import { mapHostifyAmenities } from "./amenityMap";
 
+/**
+ * Hostify tag → Travelholic destination slug.
+ * REVIEW: confirm `South Academy` mapping with operator. For now treated
+ * as a New Cairo locale near the AUC corridor; user previously called this
+ * "Near CFC".
+ */
 const TAG_TO_DESTINATION: Record<string, string> = {
   louts: "lotus",
   lotus: "lotus",
@@ -31,73 +37,39 @@ const TAG_TO_DESTINATION: Record<string, string> = {
   "gg villas": "gg-villas",
   "gg nomads": "nomads",
   nomads: "nomads",
-  "golden gates": "golden-gates",
-  "new cairo": "new-cairo",
+  "golden gates": "golden-gates", // parent area — we'll prefer a more specific tag if one exists
 };
 
-const PARENT_AREAS = new Set(["golden-gates", "new-cairo"]);
+const EGP_PER_USD = (() => {
+  const raw = process.env.NEXT_PUBLIC_EGP_PER_USD;
+  if (!raw) return 50;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 50;
+})();
 
-function makeUsdToEgp(rate: number) {
-  return (usd: number | null | undefined): number =>
-    Math.max(0, Math.round((usd ?? 0) * rate));
+function usdToEgp(usd: number | null | undefined): number {
+  return Math.max(0, Math.round((usd ?? 0) * EGP_PER_USD));
 }
 
-function normalizeTags(raw: unknown): string[] {
-  if (raw == null) return [];
-  if (Array.isArray(raw)) {
-    return raw
-      .map((t) => String(t).trim().toLowerCase())
-      .filter(Boolean);
-  }
-  if (typeof raw === "string") {
-    return raw
-      .split(",")
-      .map((t) => t.trim().toLowerCase())
-      .filter(Boolean);
-  }
-  return [];
-}
-
-/**
- * Resolve a destination slug from a Hostify listing. Tries tags first
- * (preferring specific child slugs over parent areas), then listing name
- * keywords, then city, then longitude (Mokattam vs New Cairo). Never
- * silently defaults — listings that fall through are kept off the
- * destination grid by returning `unassigned`.
- */
-function resolveDestinationSlug(
-  rawTags: unknown,
-  rawName: string | null | undefined,
-  rawCity: string | null | undefined,
-  rawLng: number | null | undefined,
-): string {
-  const tags = normalizeTags(rawTags);
-
-  for (const t of tags) {
+function tagsToDestinationSlug(tags: string | null | undefined): string {
+  if (!tags) return "lotus";
+  const list = tags
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+  // Prefer the most specific tag
+  for (const t of list) {
     const slug = TAG_TO_DESTINATION[t];
-    if (slug && !PARENT_AREAS.has(slug)) return slug;
+    if (slug && slug !== "golden-gates") return slug;
   }
-  for (const t of tags) {
-    const slug = TAG_TO_DESTINATION[t];
-    if (slug) return slug;
+  // Fall back to area-level
+  for (const t of list) {
+    if (TAG_TO_DESTINATION[t]) return TAG_TO_DESTINATION[t];
   }
-
-  const name = (rawName ?? "").toLowerCase();
-  if (/\bnomad/.test(name)) return "nomads";
-  if (/\bvilla/.test(name)) return "gg-villas";
-  if (/mokkat|mokat/.test(name)) return "gg-buildings";
-  if (/\bauc\b/.test(name)) return "auc";
-  if (/\bcfc\b/.test(name) || /south\s*academy/.test(name)) return "near-cfc";
-  if (/90\s*st|90th/.test(name)) return "ninetieth-street";
-  if (/\blotus|\blouts|near\s*mivida/.test(name)) return "lotus";
-
-  const city = (rawCity ?? "").toLowerCase();
-  if (/abageyah|mokat|mokkat/.test(city)) return "gg-buildings";
-
-  const lng = typeof rawLng === "number" ? rawLng : 0;
-  if (lng > 0 && lng < 31.4) return "gg-buildings";
-
-  return "unassigned";
+  // Heuristic last-ditch
+  if (/golden/i.test(tags)) return "gg-buildings";
+  if (/cairo/i.test(tags)) return "lotus";
+  return "lotus";
 }
 
 const BRAND_SUFFIX_REGEX = /\s*[,|·\-—]?\s*(?:by\s+travelholic|travelholic)\s*$/i;
@@ -199,11 +171,7 @@ const FALLBACK_AMENITIES: AmenityKey[] = [
  * `hostifyId` (used for deep-linking to book.travelholiceg.com); the full set
  * of unit IDs is preserved in `hostifyIds`.
  */
-export function groupAndTransform(
-  listings: HostifyListingSummary[],
-  egpPerUsd: number,
-): Home[] {
-  const usdToEgp = makeUsdToEgp(egpPerUsd);
+export function groupAndTransform(listings: HostifyListingSummary[]): Home[] {
   const groups = new Map<string, HostifyListingSummary[]>();
   for (const l of listings) {
     const slug = makeHomeSlug(l.name ?? `listing-${l.id}`);
@@ -216,18 +184,9 @@ export function groupAndTransform(
   for (const [slug, group] of groups) {
     const head = group[0];
     if (!head) continue;
-    const home = transformSummary(head, group, slug, usdToEgp);
-    if (home.destinationSlug === "unassigned") {
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[hostify] listing ${head.id} (${head.name}) could not be mapped to a destination — skipping`,
-        );
-      }
-      continue;
-    }
-    homes.push(home);
+    homes.push(transformSummary(head, group, slug));
   }
+  // Stable order: by destination then by price ascending
   return homes.sort((a, b) =>
     a.destinationSlug.localeCompare(b.destinationSlug) ||
     a.pricing.nightlyEGP - b.pricing.nightlyEGP,
@@ -238,15 +197,9 @@ function transformSummary(
   head: HostifyListingSummary,
   group: HostifyListingSummary[],
   slug: string,
-  usdToEgp: (usd: number | null | undefined) => number,
 ): Home {
   const cleanName = cleanTitle(head.name ?? "Travelholic home");
-  const destinationSlug = resolveDestinationSlug(
-    head.tags,
-    head.name,
-    head.city,
-    head.lng,
-  );
+  const destinationSlug = tagsToDestinationSlug(head.tags);
   const usd = head.default_daily_price ?? 0;
 
   const home: Home = {

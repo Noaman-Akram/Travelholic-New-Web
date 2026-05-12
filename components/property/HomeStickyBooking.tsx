@@ -10,9 +10,7 @@ import { formatPrice } from "@/lib/utils/formatPrice";
 import { calcBookingPricing, type BookingPricingResult } from "@/lib/utils/bookingMath";
 import { BookingDialog } from "./BookingDialog";
 import type { Home } from "@/lib/data/types";
-import { homeHostifyPrimaryId } from "@/lib/data";
 import type { AppLocale } from "@/i18n/routing";
-import { trackBookingStarted, trackWhatsAppClicked } from "@/lib/analytics/track";
 
 type HostifyQuote = {
   ok: true;
@@ -278,27 +276,14 @@ export function HomeStickyBooking({ home }: { home: Home }) {
             size="lg"
             className="w-full"
             disabled={!localPricing || isUnavailable}
-            onClick={() => {
-              setDialogOpen(true);
-              trackBookingStarted({
-                homeSlug: home.slug,
-                homeName: home.title.en,
-                hostifyId: homeHostifyPrimaryId(home),
-                surface: "home-detail",
-              });
-            }}
+            onClick={() => setDialogOpen(true)}
           >
             {t("bookDirect")}
           </Button>
 
           {whatsappHref ? (
             <Button asChild variant="ghost" size="lg" className="w-full">
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => trackWhatsAppClicked({ surface: "home-detail" })}
-              >
+              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
                 {t("viaWhatsapp")}
               </a>
             </Button>

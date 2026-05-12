@@ -42,14 +42,14 @@ export default async function ContactPage({ params }: Props) {
       icon: Phone,
       label: t("channels.phoneLabel"),
       note: t("channels.phoneNote"),
-      href: "tel:+201112220844",
+      href: "tel:+201000000000",
       disabled: false,
     },
     {
       icon: Mail,
       label: t("channels.emailLabel"),
       note: t("channels.emailNote"),
-      href: "mailto:hello@travelholiceg.com",
+      href: "mailto:hello@travelholic.example",
       disabled: false,
     },
   ];
@@ -141,11 +141,10 @@ export default async function ContactPage({ params }: Props) {
               </div>
 
               <div className="relative aspect-[4/3] lg:aspect-square rounded-3xl overflow-hidden ring-1 ring-navy/10 bg-stone-200">
-                {/* Embedded OSM tile centered on the Head Office: 220B, South
-                    Academy, New Cairo (30.0356762, 31.4281785) */}
+                {/* Embedded OSM tile of Lotus / New Cairo (no API key) */}
                 <iframe
-                  title="Travelholic Head Office — 220B, South Academy, New Cairo"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=31.4181785%2C30.0256762%2C31.4381785%2C30.0456762&layer=mapnik&marker=30.0356762%2C31.4281785"
+                  title="Travelholic — Lotus, New Cairo"
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=31.43%2C30.00%2C31.47%2C30.03&layer=mapnik&marker=30.0153%2C31.4501"
                   className="absolute inset-0 h-full w-full border-0"
                 />
               </div>

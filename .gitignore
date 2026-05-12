@@ -30,9 +30,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files: ignore all by default, but always commit the .example template.
+# env files (can opt-in for committing if needed)
 .env*
-!.env.example
 
 # vercel
 .vercel
@@ -43,15 +42,6 @@ next-env.d.ts
 
 # Travelholic local Node install
 .tools/
-
-# Runtime caches: FX last-good rates + SuperPay pending orders.
-# These are written by the server at runtime and must never be committed.
-.cache/
-
-# Playwright artifacts
-/test-results/
-/playwright-report/
-/playwright/.cache/
 
 # Claude Code per-machine permissions
 .claude/settings.local.json
