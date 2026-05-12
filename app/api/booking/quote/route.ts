@@ -61,8 +61,8 @@ export async function GET(req: NextRequest) {
     //       widget needs to react ("try different dates") instead of
     //       showing "live quote unavailable".
     if (!res.success) {
-      const rawError = typeof (res as { error?: unknown }).error === "string"
-        ? ((res as { error: string }).error)
+      const rawError = typeof (res as unknown as { error?: unknown }).error === "string"
+        ? ((res as unknown as { error: string }).error)
         : "";
       const isUnavailable = /not\s+available|unavailable|blocked|booked/i.test(
         rawError,
