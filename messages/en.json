@@ -14,7 +14,7 @@
     "save": "Save",
     "directPrice": "Direct",
     "otaPrice": "Airbnb / Booking",
-    "bookDirect": "Book direct",
+    "bookDirect": "Reserve",
     "viewDetails": "View home",
     "exploreCta": "Explore",
     "back": "Back",
@@ -36,7 +36,7 @@
     "stories": "Stories",
     "about": "About",
     "contact": "Contact",
-    "book": "Book direct",
+    "book": "Reserve",
     "menuLabel": "Menu",
     "closeLabel": "Close"
   },
@@ -62,7 +62,7 @@
       "lotus": "Lotus",
       "auc": "AUC",
       "nearCfc": "Near CFC",
-      "ninetiethStreet": "90th Street",
+      "ninetiethStreet": "90 Street",
       "goldenGatesLabel": "Golden Gates",
       "ggBuildings": "GG Buildings",
       "ggVillas": "GG Villas",
@@ -339,7 +339,7 @@
   },
   "destinations": {
     "metaTitle": "Destinations — Travelholic",
-    "metaDescription": "Travelholic homes across New Cairo (Lotus, AUC, Near CFC, 90th Street) and Golden Gates (GG Buildings, GG Villas, Nomads).",
+    "metaDescription": "Travelholic homes across New Cairo (Lotus, AUC, Near CFC, 90 Street) and Golden Gates (GG Buildings, GG Villas, Nomads).",
     "heroEyebrow": "Where we are",
     "heroHeadline": "Two cities, seven addresses.",
     "heroSubline": "From the academic calm of AUC to the airport-side ease of Golden Gates — pick the corner of Cairo that fits the trip.",
@@ -351,7 +351,8 @@
     },
     "mapTitle": "Find us on the map",
     "homesIn": "{count, plural, =1 {1 listing} other {# listings}}",
-    "from": "from"
+    "from": "from",
+    "viewDistrict": "View district"
   },
   "destinationDetail": {
     "metaTitle": "{name} — Travelholic",
@@ -519,7 +520,7 @@
       "monthlyDiscount": "Monthly stay · {percent}% off",
       "cleaningFee": "Cleaning fee",
       "total": "Total",
-      "bookDirect": "Book direct",
+      "bookDirect": "Reserve stay",
       "viaWhatsapp": "Reserve via WhatsApp",
       "savesYou": "You save {amount} vs Airbnb",
       "noPaymentNow": "You won't be charged yet"
@@ -589,7 +590,58 @@
     "errors": {
       "submit": "Something went wrong. Try once more, or message us on WhatsApp."
     },
-    "whatsappPrefill": "Hi Travelholic — I just booked {home} from {checkIn} to {checkOut} for {guests, plural, =1 {1 guest} other {# guests}}. Total {total}. Booking ref: {ref}."
+    "whatsappPrefill": "Hi Travelholic — I just booked {home} from {checkIn} to {checkOut} for {guests, plural, =1 {1 guest} other {# guests}}. Total {total}. Booking ref: {ref}.",
+    "payment": {
+      "step": "Step 3 of 3",
+      "title": "Payment",
+      "intro": "You'll be taken to our secure payment page to complete your booking. Charges only post once payment is confirmed.",
+      "summary": "Total to charge",
+      "currencyNote": "EGP only — exchange rates locked at booking.",
+      "cardSecure": "Card details handled by SuperPay (PCI DSS). We never see them.",
+      "primaryCta": "Continue to payment",
+      "redirecting": "Opening secure payment…",
+      "errors": {
+        "create": "Couldn't open the payment page. Try again or contact us on WhatsApp."
+      }
+    }
+  },
+  "bookingResult": {
+    "loading": {
+      "title": "Confirming your stay…",
+      "body": "We're verifying your payment with SuperPay. This usually takes a few seconds — don't close the page."
+    },
+    "confirmed": {
+      "eyebrow": "Booking confirmed",
+      "title": "You're booked.",
+      "body": "We'll send a confirmation email and a WhatsApp message with check-in details shortly.",
+      "codeLabel": "Confirmation code",
+      "browseMore": "Browse more homes",
+      "home": "Back to home"
+    },
+    "pending": {
+      "title": "Payment is processing",
+      "body": "We haven't received final confirmation from SuperPay yet. We'll email you the moment it lands. Reference: {ref}"
+    },
+    "failed": {
+      "title": "Payment didn't go through",
+      "body": "No charge was made. The card may have been declined or the session expired. Try again — or message us on WhatsApp.",
+      "tryAgain": "Try again"
+    },
+    "paidNoRes": {
+      "title": "Payment received — finalising your booking",
+      "body": "Your card was charged successfully but we hit a snag confirming the dates with our system. The team has been notified and will reach out within an hour. Reference: {ref}"
+    },
+    "error": {
+      "title": "We couldn't load your booking",
+      "body": "Try opening the link from your confirmation email, or message us so we can sort this out fast.",
+      "cta": "Browse homes"
+    },
+    "cancelled": {
+      "title": "Payment cancelled",
+      "body": "No charge was made. Your dates are still available — try again whenever you're ready.",
+      "tryAgain": "Try again",
+      "contact": "Contact us"
+    }
   },
   "experiences": {
     "metaTitle": "Experiences — Travelholic",
@@ -667,12 +719,12 @@
       "title": "The fast lanes",
       "whatsappLabel": "WhatsApp",
       "whatsappNote": "Replies in minutes",
-      "phoneLabel": "Phone",
-      "phoneNote": "9 AM – midnight, Cairo time",
+      "phoneLabel": "Phone (24/7)",
+      "phoneNote": "+20 111 222 0844",
       "emailLabel": "Email",
-      "emailNote": "We read every message",
+      "emailNote": "hello@travelholiceg.com",
       "addressLabel": "Office",
-      "addressLine1": "Lotus, New Cairo",
+      "addressLine1": "220B, South Academy, New Cairo",
       "addressLine2": "Cairo, Egypt"
     },
     "faqTitle": "Before you write —"

@@ -37,8 +37,8 @@ export function Navbar({ locale }: { locale: "en" | "ar" }) {
       className={cn(
         "fixed top-0 inset-x-0 z-40 transition-colors duration-300 ease-out-expo",
         scrolled
-          ? "bg-stone/90 backdrop-blur-md border-b border-navy/10"
-          : "bg-transparent",
+          ? "bg-stone/95 backdrop-blur-md border-b border-navy/10 shadow-[0_2px_24px_-12px_rgba(0,39,62,0.18)]"
+          : "bg-stone/70 backdrop-blur-sm border-b border-navy/[0.06]",
       )}
     >
       <div className="mx-auto flex h-16 lg:h-20 max-w-screen-2xl items-center justify-between gap-4 px-5 sm:px-6 lg:px-8 xl:px-10">
