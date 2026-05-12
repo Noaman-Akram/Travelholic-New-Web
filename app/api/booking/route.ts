@@ -40,16 +40,29 @@ const BookingSchema = z.object({
   timestamp: z.string(),
 });
 
+// Operational logs — PII-safe so reservation issues are diagnosable
+// from Vercel → Logs without exposing guest emails / phones / names.
+// All entries prefixed with `[booking]` for easy grep. Logs always
+// fire (not gated by NODE_ENV) — production observability is the
+// whole point.
+/* eslint-disable no-console */
+const log = (...args: unknown[]) => console.log("[booking]", ...args);
+const logErr = (...args: unknown[]) => console.error("[booking]", ...args);
+/* eslint-enable no-console */
+
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
   let body: unknown;
   try {
     body = await req.json();
   } catch {
+    logErr("invalid-json body");
     return NextResponse.json({ ok: false, error: "invalid-json" }, { status: 400 });
   }
 
   const parsed = BookingSchema.safeParse(body);
   if (!parsed.success) {
+    logErr("invalid-payload", parsed.error.flatten().fieldErrors);
     return NextResponse.json(
       { ok: false, error: "invalid-payload", issues: parsed.error.flatten() },
       { status: 400 },
@@ -58,6 +71,19 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
   const fallbackRef = generateRef(data.homeSlug);
+
+  log("incoming", {
+    slug: data.homeSlug,
+    ci: data.checkIn,
+    co: data.checkOut,
+    nights: data.nights,
+    guests: data.guests,
+    locale: data.locale,
+    totalEGP: data.pricing.totalEGP,
+    currency: data.pricing.currency,
+    hostifyAvailable: HOSTIFY_AVAILABLE(),
+    bookingStatus: HOSTIFY_BOOKING_STATUS,
+  });
 
   // Try to create the reservation in Hostify. If the API key isn't set or
   // the call fails, we still capture the lead via the webhook and return
@@ -76,6 +102,10 @@ export async function POST(req: NextRequest) {
 
       if (!home || !listingId) {
         // Mock-only home (no Hostify ID). Fall through to webhook only.
+        log("mock-only home, skipping hostify", {
+          slug: data.homeSlug,
+          hasHome: !!home,
+        });
         hostifyResult = { ok: false, error: "no-hostify-listing" };
       } else {
         // Hostify expects total_price in the listing's currency. Travelholic
@@ -91,6 +121,15 @@ export async function POST(req: NextRequest) {
         const note =
           (guest.specialRequests || "").trim() ||
           `Booked direct via Travelholic website. Country: ${guest.country}.`;
+
+        log("calling hostify", {
+          listingId,
+          ci: data.checkIn,
+          co: data.checkOut,
+          guests: data.guests,
+          totalUsd,
+          status: HOSTIFY_BOOKING_STATUS,
+        });
 
         const res = await hostify.createReservation({
           listingId,
@@ -112,11 +151,17 @@ export async function POST(req: NextRequest) {
             confirmationCode: res.reservation.confirmation_code,
             reservationId: res.reservation.id,
           };
+          log("hostify success", {
+            reservationId: res.reservation.id,
+            confirmationCode: res.reservation.confirmation_code,
+            status: HOSTIFY_BOOKING_STATUS,
+          });
         } else {
           hostifyResult = {
             ok: false,
             error: res.error || res.message || "hostify-rejected",
           };
+          logErr("hostify rejected", { error: hostifyResult.error });
         }
       }
     } catch (err) {
@@ -124,11 +169,14 @@ export async function POST(req: NextRequest) {
         ok: false,
         error: err instanceof HostifyError ? `hostify-${err.status}` : "hostify-error",
       };
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.error("[booking] hostify createReservation failed:", err);
-      }
+      logErr("hostify threw", {
+        error: hostifyResult.error,
+        message: err instanceof Error ? err.message : String(err),
+        body: err instanceof HostifyError ? err.body : undefined,
+      });
     }
+  } else {
+    log("hostify not configured (HOSTIFY_API_KEY missing) — lead-only mode");
   }
 
   const finalRef = hostifyResult?.confirmationCode ?? fallbackRef;
@@ -148,23 +196,25 @@ export async function POST(req: NextRequest) {
           ...data,
         }),
       });
+      log("webhook delivered", { ref: finalRef });
     } catch (err) {
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.error("[booking] webhook delivery failed", err);
-      }
+      logErr("webhook failed", {
+        ref: finalRef,
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
-  } else if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
-    console.log("[booking] no webhook configured — local log only:", {
-      ref: finalRef,
-      hostify: hostifyResult,
-    });
+  } else {
+    log("no webhook configured", { ref: finalRef });
   }
 
   // Surface Hostify failures to the client so the dialog can show an
   // honest error instead of a fake confirmation code.
   if (hostifyResult && hostifyResult.ok === false && hostifyResult.error !== "no-hostify-listing") {
+    log("response 502", {
+      ref: fallbackRef,
+      error: hostifyResult.error,
+      ms: Date.now() - t0,
+    });
     return NextResponse.json(
       {
         ok: false,
@@ -175,11 +225,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const status = hostifyResult?.ok ? HOSTIFY_BOOKING_STATUS : "lead";
+  log("response 200", {
+    ref: finalRef,
+    hostifyReservationId: hostifyResult?.reservationId,
+    status,
+    ms: Date.now() - t0,
+  });
+
   return NextResponse.json({
     ok: true,
     ref: finalRef,
     hostifyReservationId: hostifyResult?.reservationId,
-    status: hostifyResult?.ok ? HOSTIFY_BOOKING_STATUS : "lead",
+    status,
   });
 }
 
