@@ -53,9 +53,43 @@ export async function GET(req: NextRequest) {
       includeFees: true,
     });
 
-    if (!res.success || !res.price) {
+    // Hostify uses `{ success: false, error: "..." }` to convey two
+    // different things:
+    //   (a) hard API failures (auth, listing-not-found, bad params, etc.)
+    //   (b) "the chosen dates aren't available" — a normal business
+    //       response we should NOT treat as a 502, because the booking
+    //       widget needs to react ("try different dates") instead of
+    //       showing "live quote unavailable".
+    if (!res.success) {
+      const rawError = typeof (res as { error?: unknown }).error === "string"
+        ? ((res as { error: string }).error)
+        : "";
+      const isUnavailable = /not\s+available|unavailable|blocked|booked/i.test(
+        rawError,
+      );
+      if (isUnavailable) {
+        return NextResponse.json(
+          {
+            ok: true,
+            available: false,
+            reason: "dates-unavailable",
+            message: rawError || "These dates are not available",
+          },
+          { status: 200 },
+        );
+      }
       return NextResponse.json(
-        { ok: false, error: "no-quote", message: "Hostify returned no quote" },
+        {
+          ok: false,
+          error: "no-quote",
+          message: rawError || "Hostify returned no quote",
+        },
+        { status: 502 },
+      );
+    }
+    if (!res.price) {
+      return NextResponse.json(
+        { ok: false, error: "no-quote", message: "Hostify returned no price" },
         { status: 502 },
       );
     }
