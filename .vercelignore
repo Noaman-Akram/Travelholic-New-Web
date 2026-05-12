@@ -1,0 +1,27 @@
+# Vercel-specific build exclusions.
+# Like .gitignore but only affects what Vercel uploads to its build container.
+# Anything listed here stays in git for local / CI use but never reaches the
+# production build pipeline — which is what we want for Playwright (the
+# config breaks Vercel when picked up by Next's compiler).
+
+# E2E test suite (Playwright)
+playwright.config.ts
+tests/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Reference / dev-only docs (large PDFs, postman collections)
+"super pay intg refrence docs/"
+"Travelholic Mail - Fwd_ Payment Integration Guide.pdf"
+docs/
+
+# Local runtime caches
+.cache/
+.tools/
+
+# IDE / agent artefacts
+.claude/
+
+# Local plan files
+*.plan.md
