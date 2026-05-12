@@ -111,11 +111,44 @@ export async function GET(req: NextRequest) {
       fx: { rate: fx.rate, source: fx.source, fetchedAt: fx.fetchedAt },
     });
   } catch (err) {
+    // Hostify communicates "dates not available" as HTTP 400 with a
+    // JSON body like { success: false, error: "The period is not
+    // available" }. Our request<> helper throws HostifyError on non-2xx
+    // status, so we parse the body here and downgrade to the
+    // "available: false" UX path when applicable.
+    if (err instanceof HostifyError) {
+      let parsed: { success?: boolean; error?: string } | null = null;
+      try {
+        parsed = JSON.parse(err.body);
+      } catch {
+        // body isn't JSON — fall through to generic error response
+      }
+      const rawError = typeof parsed?.error === "string" ? parsed.error : "";
+      const isUnavailable = /not\s+available|unavailable|blocked|booked/i.test(
+        rawError,
+      );
+      if (isUnavailable) {
+        return NextResponse.json(
+          {
+            ok: true,
+            available: false,
+            reason: "dates-unavailable",
+            message: rawError,
+          },
+          { status: 200 },
+        );
+      }
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `hostify-${err.status}`,
+          message: rawError || undefined,
+        },
+        { status: 502 },
+      );
+    }
     return NextResponse.json(
-      {
-        ok: false,
-        error: err instanceof HostifyError ? `hostify-${err.status}` : "hostify-error",
-      },
+      { ok: false, error: "hostify-error" },
       { status: 502 },
     );
   }
