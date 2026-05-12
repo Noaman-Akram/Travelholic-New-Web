@@ -1,16 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { superpay, SUPERPAY_AVAILABLE, SuperPayError } from "@/lib/superpay/client";
-import { getOrder, updateOrder } from "@/lib/superpay/orders";
-import { createHostifyReservation } from "@/lib/hostify/reservations";
+import { hostify, HostifyError } from "@/lib/hostify/client";
+import {
+  getOrder,
+  parseHostifyIdFromMerchantOrderId,
+  updateOrder,
+} from "@/lib/superpay/orders";
 
 /**
  * Client-polled from /booking/success. Returns the current state of a
- * pending order — useful when the webhook hasn't arrived yet (or in local
- * dev when there's no public URL for SuperPay to call).
+ * pending order — useful when the webhook hasn't arrived yet (or in
+ * local dev where there's no public URL for SuperPay to call).
  *
- * Acts as a backstop: if SuperPay says PAY_COMPLETED but we haven't yet
- * created the Hostify reservation (no webhook), we create it here. Same
- * idempotency rule as the webhook applies.
+ * Acts as a webhook backstop: if SuperPay reports PAY_COMPLETED but
+ * the audit envelope doesn't yet show a `payment` block (the webhook
+ * hasn't fired), we apply the same Hostify status transition the
+ * webhook would have — promoting the pending reservation to
+ * `accepted` for success, or `cancelled_by_guest` for failure.
+ *
+ * Idempotent: re-applying the same Hostify status returns 400 with a
+ * helpful error which we treat as already-applied.
  */
 export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get("ref");
@@ -23,22 +32,25 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "not-found" }, { status: 404 });
   }
 
-  // If we already have a confirmed Hostify reservation, return it immediately.
-  if (order.hostify) {
+  // Hostify reservation id is encoded in the merchantOrderId itself —
+  // it's also stored on the audit envelope for redundancy.
+  const reservationId =
+    order.hostifyReservationId ?? parseHostifyIdFromMerchantOrderId(ref);
+
+  // If audit already shows the reservation was confirmed (webhook
+  // already did the work), short-circuit.
+  if (order.payment?.orderStatus === "PAY_COMPLETED" && order.hostifyConfirmationCode) {
     return NextResponse.json({
       ok: true,
       state: "confirmed",
-      confirmationCode: order.hostify.confirmationCode,
-      hostifyReservationId: order.hostify.reservationId,
-      paidAt: order.payment?.completedAt,
+      confirmationCode: order.hostifyConfirmationCode,
+      hostifyReservationId: reservationId ?? null,
+      paidAt: order.payment.completedAt,
     });
   }
 
-  // No reservation yet — query SuperPay for the authoritative status.
   if (!SUPERPAY_AVAILABLE()) {
-    return NextResponse.json(
-      { ok: true, state: "pending", reason: "superpay-not-configured" },
-    );
+    return NextResponse.json({ ok: true, state: "pending", reason: "superpay-not-configured" });
   }
 
   try {
@@ -47,61 +59,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: true, state: "pending" });
     }
 
-    if (status.orderStatus !== "PAY_COMPLETED") {
-      // Persist the latest non-final state for the success page to read.
-      await updateOrder(order.merchantOrderId, {
-        payment: {
-          paymentgwOrderId: status.paymentgwOrderId,
-          orderStatus: status.orderStatus,
-          completedAt: status.updatedTime,
-          acquirer: status.acquirer,
-          network: status.network,
-        },
-      });
-      return NextResponse.json({
-        ok: true,
-        state: status.orderStatus === "FAILED" || status.orderStatus === "CANCELLED"
-          ? "failed"
-          : "pending",
-        orderStatus: status.orderStatus,
-      });
-    }
+    const completed = status.orderStatus === "PAY_COMPLETED";
+    const failed =
+      status.orderStatus === "FAILED" ||
+      status.orderStatus === "CANCELLED" ||
+      status.orderStatus === "EXPIRED";
 
-    // PAY_COMPLETED but no Hostify reservation yet → create it now.
-    const reservation = await createHostifyReservation({
-      homeSlug: order.homeSlug,
-      checkIn: order.checkIn,
-      checkOut: order.checkOut,
-      guests: order.guests,
-      guest: order.guest,
-      totalEGP: order.pricing.totalEGP,
-      status: "accepted",
-      noteSuffix: `Paid via SuperPay. Order ${order.merchantOrderId} / payment ${status.paymentgwOrderId}.`,
-    });
-
-    if (!reservation.ok) {
-      // Payment succeeded but reservation create failed — surface this so
-      // the success page can show "we'll be in touch" + ops gets paged.
-      await updateOrder(order.merchantOrderId, {
-        payment: {
-          paymentgwOrderId: status.paymentgwOrderId,
-          orderStatus: status.orderStatus,
-          completedAt: status.updatedTime,
-          acquirer: status.acquirer,
-          network: status.network,
-        },
-      });
-      return NextResponse.json(
-        {
-          ok: false,
-          state: "paid-no-reservation",
-          error: reservation.error,
-          paymentgwOrderId: status.paymentgwOrderId,
-        },
-        { status: 500 },
-      );
-    }
-
+    // Persist whatever SuperPay told us into the audit envelope.
     await updateOrder(order.merchantOrderId, {
       payment: {
         paymentgwOrderId: status.paymentgwOrderId,
@@ -110,19 +74,88 @@ export async function GET(req: NextRequest) {
         acquirer: status.acquirer,
         network: status.network,
       },
-      hostify: {
-        reservationId: reservation.reservationId,
-        confirmationCode: reservation.confirmationCode,
-        createdAt: new Date().toISOString(),
-      },
     });
+
+    if (!completed && !failed) {
+      // INITIATE_AUTHORIZE / REFUNDED / PARTIALLY_REFUNDED — still in
+      // flight from the guest's POV.
+      return NextResponse.json({
+        ok: true,
+        state: "pending",
+        orderStatus: status.orderStatus,
+      });
+    }
+
+    if (!reservationId) {
+      // Audit envelope has no reservation id and the merchantOrderId
+      // can't be decoded. Surface this so an operator can reconcile.
+      return NextResponse.json(
+        {
+          ok: false,
+          state: "paid-no-reservation",
+          error: "no-reservation-id",
+        },
+        { status: 500 },
+      );
+    }
+
+    const targetStatus = completed ? "accepted" : "cancelled_by_guest";
+    try {
+      await hostify.updateReservation(reservationId, {
+        status: targetStatus,
+        note: completed
+          ? `Paid via SuperPay. Order ${order.merchantOrderId} / payment ${status.paymentgwOrderId}. (status-backstop)`
+          : `SuperPay reported ${status.orderStatus}. Order ${order.merchantOrderId}. (status-backstop)`,
+      });
+    } catch (err) {
+      if (err instanceof HostifyError) {
+        const alreadyInState =
+          err.status === 400 && /Status should be one of/i.test(err.body);
+        if (!alreadyInState) {
+          // Real Hostify failure on a paid order — page user, but report
+          // honest state.
+          return NextResponse.json(
+            {
+              ok: false,
+              state: completed ? "paid-no-reservation" : "failed",
+              error: `hostify-${err.status}`,
+            },
+            { status: 500 },
+          );
+        }
+      } else {
+        throw err;
+      }
+    }
+
+    if (completed) {
+      // Record on the audit envelope so the next poll short-circuits.
+      // We need the Hostify confirmation_code — re-fetch the reservation.
+      let confirmationCode = order.hostifyConfirmationCode;
+      try {
+        const r = await hostify.getReservation(reservationId);
+        confirmationCode = r.reservation?.confirmation_code ?? confirmationCode;
+      } catch {
+        // Best-effort; the merchantOrderId is enough as a ref otherwise.
+      }
+      if (confirmationCode && confirmationCode !== order.hostifyConfirmationCode) {
+        await updateOrder(order.merchantOrderId, {
+          hostifyConfirmationCode: confirmationCode,
+        });
+      }
+      return NextResponse.json({
+        ok: true,
+        state: "confirmed",
+        confirmationCode: confirmationCode ?? null,
+        hostifyReservationId: reservationId,
+        paidAt: status.updatedTime,
+      });
+    }
 
     return NextResponse.json({
       ok: true,
-      state: "confirmed",
-      confirmationCode: reservation.confirmationCode,
-      hostifyReservationId: reservation.reservationId,
-      paidAt: status.updatedTime,
+      state: "failed",
+      orderStatus: status.orderStatus,
     });
   } catch (err) {
     const code = err instanceof SuperPayError ? `superpay-${err.status}` : "status-error";

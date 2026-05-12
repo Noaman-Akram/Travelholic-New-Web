@@ -3,14 +3,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import * as Dialog from "@radix-ui/react-dialog";
-import {
-  X,
-  ArrowRight,
-  ArrowLeft,
-  Loader2,
-  MessageCircle,
-  CheckCircle2,
-} from "lucide-react";
+import { X, ArrowRight, ArrowLeft, Loader2, Lock, MessageCircle } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/lib/currency/context";
@@ -59,27 +52,37 @@ export function BookingDialog({
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof GuestData, boolean>>
   >({});
-  // Instant booking: submitting step 2 creates the Hostify reservation
-  // synchronously; on success the user lands on step 3 (confirmation).
+  // Reservation-first model:
+  //   step 2 submit  → POST /api/booking → Hostify creates pending → ids
+  //                    stored here, dialog advances to step 3 "Payment".
+  //   step 3 button  → POST /api/payment/create with the ids → SuperPay
+  //                    redirect. Webhook later promotes Hostify
+  //                    pending → accepted / cancelled_by_guest.
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const [confirmationRef, setConfirmationRef] = useState<string | null>(null);
-  const [bookingStatus, setBookingStatus] = useState<"accepted" | "lead" | null>(
-    null,
-  );
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState(false);
+  const [pendingReservation, setPendingReservation] = useState<{
+    id: number;
+    confirmationCode: string;
+  } | null>(null);
 
   const handleClose = (next: boolean) => {
     onOpenChange(next);
     if (!next) {
-      // Reset on close so a fresh open starts at step 1.
+      // Reset on close so a fresh open starts at step 1. NB: closing
+      // does NOT cancel the Hostify pending reservation; the 15-min
+      // expiry sweeper will handle that. If a guest reopens the
+      // dialog they get a fresh booking attempt (new merchantOrderId).
       setTimeout(() => {
         setStep(1);
         setValidatedGuest(null);
         setFieldErrors({});
         setBookingLoading(false);
         setBookingError(null);
-        setConfirmationRef(null);
-        setBookingStatus(null);
+        setPaymentLoading(false);
+        setPaymentError(false);
+        setPendingReservation(null);
       }, 250);
     }
   };
@@ -140,23 +143,77 @@ export function BookingDialog({
       const json = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         ref?: string;
+        hostifyReservationId?: number;
         status?: "accepted" | "pending" | "lead";
         error?: string;
       };
 
-      if (!res.ok || !json.ok || !json.ref) {
-        setBookingError(json.error ?? "booking-failed");
+      if (!res.ok || !json.ok || !json.ref || !json.hostifyReservationId) {
+        setBookingError(
+          json.error === "dates-unavailable" ? "dates-unavailable" : json.error ?? "booking-failed",
+        );
         setBookingLoading(false);
         return;
       }
 
-      setConfirmationRef(json.ref);
-      setBookingStatus(json.status === "lead" ? "lead" : "accepted");
+      setPendingReservation({
+        id: json.hostifyReservationId,
+        confirmationCode: json.ref,
+      });
       setBookingLoading(false);
       setStep(3);
     } catch {
       setBookingError("network");
       setBookingLoading(false);
+    }
+  }
+
+  async function handlePay() {
+    if (!validatedGuest || !pendingReservation) return;
+    setPaymentLoading(true);
+    setPaymentError(false);
+
+    try {
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hostifyReservationId: pendingReservation.id,
+          hostifyConfirmationCode: pendingReservation.confirmationCode,
+          homeSlug: home.slug,
+          checkIn,
+          checkOut,
+          nights: pricing.nights,
+          guests,
+          guest: validatedGuest,
+          pricing: {
+            subtotalEGP: pricing.subtotalEGP,
+            discountEGP: pricing.discountEGP,
+            cleaningFeeEGP: pricing.cleaningFeeEGP,
+            totalEGP: pricing.totalEGP,
+          },
+          locale,
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        paymentUrl?: string;
+        error?: string;
+      };
+
+      if (!res.ok || !json.ok || !json.paymentUrl) {
+        setPaymentError(true);
+        setPaymentLoading(false);
+        return;
+      }
+
+      // Redirect to SuperPay's hosted page. The user returns to
+      // /booking/success or /booking/cancelled depending on outcome.
+      // The webhook handles the Hostify status transition independently.
+      window.location.href = json.paymentUrl;
+    } catch {
+      setPaymentError(true);
+      setPaymentLoading(false);
     }
   }
 
@@ -169,8 +226,8 @@ export function BookingDialog({
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim();
   const whatsappHref = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        confirmationRef
-          ? `Hi Travelholic — I just reserved ${home.title[locale]} (${checkIn} → ${checkOut}, ${guests} guests). Booking ref: ${confirmationRef}.`
+        pendingReservation
+          ? `Hi Travelholic — I'm reserving ${home.title[locale]} (${checkIn} → ${checkOut}, ${guests} guests). Hold ref: ${pendingReservation.confirmationCode}. Need help finalising payment.`
           : `Hi Travelholic — I'd like to reserve ${home.title[locale]} (${checkIn} → ${checkOut}, ${guests} guests).`,
       )}`
     : undefined;
@@ -187,14 +244,14 @@ export function BookingDialog({
                   ? t("step1.eyebrow")
                   : step === 2
                   ? t("step2.eyebrow")
-                  : t("success.eyebrow")}
+                  : t("payment.step")}
               </p>
               <Dialog.Title className="mt-1 text-h4-mobile lg:text-h4 font-medium leading-tight">
                 {step === 1
                   ? t("step1.title")
                   : step === 2
                   ? t("step2.title")
-                  : t("success.title")}
+                  : t("payment.title")}
               </Dialog.Title>
             </div>
             <Dialog.Close asChild>
@@ -366,21 +423,7 @@ export function BookingDialog({
               </form>
             ) : (
               <div key="step3" className="p-5 sm:p-7">
-                <div className="flex flex-col items-center text-center max-w-xl mx-auto py-3">
-                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-olive/15 text-olive">
-                    <CheckCircle2 className="h-7 w-7" />
-                  </span>
-                  <h3 className="mt-5 text-h4-mobile lg:text-h4 font-medium tracking-tight-heading">
-                    {bookingStatus === "lead"
-                      ? t("success.leadHeadline")
-                      : t("success.headline")}
-                  </h3>
-                  <p className="mt-3 text-sm text-navy/70 text-pretty">
-                    {bookingStatus === "lead"
-                      ? t("success.leadIntro")
-                      : t("success.intro")}
-                  </p>
-                </div>
+                <p className="text-body text-navy/75 max-w-xl">{t("payment.intro")}</p>
 
                 <div className="mt-6 rounded-2xl bg-stone-100 ring-1 ring-navy/10 p-5">
                   <div className="flex items-center gap-4">
@@ -396,31 +439,37 @@ export function BookingDialog({
                         {checkIn} → {checkOut} · {guests}{" "}
                         {guests === 1 ? "guest" : "guests"}
                       </p>
+                      {pendingReservation ? (
+                        <p className="text-[11px] text-navy/45 mt-1 font-mono">
+                          {t("payment.holdRefLabel")}{" "}
+                          <span className="text-navy/65">
+                            {pendingReservation.confirmationCode}
+                          </span>
+                        </p>
+                      ) : null}
                     </div>
                   </div>
-                  <div className="mt-5 pt-4 border-t border-navy/10 grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55">
-                        {t("success.refLabel")}
-                      </p>
-                      <p className="mt-1 font-mono font-medium tabular-nums text-navy">
-                        {confirmationRef}
-                      </p>
-                    </div>
-                    <div className="text-end">
-                      <p className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55">
-                        {t("success.totalLabel")}
-                      </p>
-                      <p className="mt-1 font-medium tabular-nums text-navy">
-                        {totalEgp}
-                      </p>
-                    </div>
+                  <div className="mt-5 pt-4 border-t border-navy/10 flex items-baseline justify-between">
+                    <span className="text-eyebrow uppercase font-medium tracking-eyebrow text-navy/55">
+                      {t("payment.summary")}
+                    </span>
+                    <span className="text-h4-mobile lg:text-h4 font-medium tabular-nums">
+                      {totalEgp}
+                    </span>
                   </div>
+                  <p className="mt-3 text-xs text-navy/55">{t("payment.currencyNote")}</p>
                 </div>
 
-                <p className="mt-5 text-xs text-navy/55 text-center">
-                  {t("success.emailNote")}
+                <p className="mt-5 inline-flex items-center gap-2 text-xs text-navy/65">
+                  <Lock className="h-3.5 w-3.5" />
+                  {t("payment.cardSecure")}
                 </p>
+
+                {paymentError ? (
+                  <div className="mt-5 rounded-2xl bg-maroon/5 ring-1 ring-maroon/30 px-4 py-3 text-sm text-maroon">
+                    {t("payment.errors.create")}
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
@@ -472,29 +521,49 @@ export function BookingDialog({
               </>
             ) : (
               <>
-                {whatsappHref ? (
-                  <Button asChild variant="ghost" size="md">
-                    <a
-                      href={whatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Message us on WhatsApp"
-                    >
-                      <MessageCircle className="h-4 w-4 me-1.5" />
-                      {t("success.whatsappCta")}
-                    </a>
-                  </Button>
-                ) : (
-                  <span />
-                )}
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="ghost"
                   size="md"
-                  onClick={() => handleClose(false)}
+                  onClick={() => setStep(2)}
+                  disabled={paymentLoading}
                 >
-                  {t("success.close")}
+                  <ArrowLeft className="h-4 w-4 me-1 rtl:scale-x-[-1]" />
+                  {t("step2.back")}
                 </Button>
+                <div className="flex items-center gap-2">
+                  {whatsappHref ? (
+                    <Button asChild variant="ghost" size="md" className="hidden sm:inline-flex">
+                      <a
+                        href={whatsappHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Reserve via WhatsApp"
+                      >
+                        <MessageCircle className="h-4 w-4 me-1.5" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={handlePay}
+                    disabled={paymentLoading || !pendingReservation}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-navy text-stone h-11 px-6 text-sm font-medium transition-colors hover:bg-navy-700 disabled:opacity-60"
+                  >
+                    {paymentLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
+                        {t("payment.redirecting")}
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4" />
+                        {t("payment.primaryCta")}
+                      </>
+                    )}
+                  </button>
+                </div>
               </>
             )}
           </footer>

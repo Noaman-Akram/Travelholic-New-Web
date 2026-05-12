@@ -5,12 +5,13 @@ import { getHomeBySlug } from "@/lib/data/server";
 import { homeHostifyPrimaryId } from "@/lib/data";
 import { egpToUsd } from "@/lib/fx/rates";
 
-// Booking status to create in Hostify. "accepted" = the reservation is
-// confirmed the moment the guest submits the form — no manual host
-// approval queue, no payment gate. Travelholic's current commercial
-// model is instant direct booking without on-site payment; switch back
-// to "pending" only if you reintroduce an approval / payment step.
-const HOSTIFY_BOOKING_STATUS: "pending" | "accepted" = "accepted";
+// Booking status to create in Hostify. "pending" = the dates are held
+// for the guest while they complete payment on SuperPay. The
+// /api/payment/webhook handler promotes pending → accepted on
+// PAY_COMPLETED, or cancels via cancelled_by_guest on PAY_FAILED.
+// A safety-net cron (/api/payment/expire) sweeps any pending older
+// than 15 minutes with no payment outcome.
+const HOSTIFY_BOOKING_STATUS: "pending" | "accepted" = "pending";
 
 const BookingSchema = z.object({
   homeSlug: z.string().min(1),
@@ -39,8 +40,11 @@ const BookingSchema = z.object({
   timestamp: z.string(),
 });
 
-// Brief operational logs (PII-safe) so reservation issues are diagnosable
-// from Vercel → Logs without exposing guest emails / phones.
+// Operational logs — PII-safe so reservation issues are diagnosable
+// from Vercel → Logs without exposing guest emails / phones / names.
+// All entries prefixed with `[booking]` for easy grep. Logs always
+// fire (not gated by NODE_ENV) — production observability is the
+// whole point.
 /* eslint-disable no-console */
 const log = (...args: unknown[]) => console.log("[booking]", ...args);
 const logErr = (...args: unknown[]) => console.error("[booking]", ...args);
@@ -78,6 +82,7 @@ export async function POST(req: NextRequest) {
     totalEGP: data.pricing.totalEGP,
     currency: data.pricing.currency,
     hostifyAvailable: HOSTIFY_AVAILABLE(),
+    bookingStatus: HOSTIFY_BOOKING_STATUS,
   });
 
   // Try to create the reservation in Hostify. If the API key isn't set or
@@ -97,7 +102,10 @@ export async function POST(req: NextRequest) {
 
       if (!home || !listingId) {
         // Mock-only home (no Hostify ID). Fall through to webhook only.
-        log("mock-only home, skipping hostify", { slug: data.homeSlug, hasHome: !!home });
+        log("mock-only home, skipping hostify", {
+          slug: data.homeSlug,
+          hasHome: !!home,
+        });
         hostifyResult = { ok: false, error: "no-hostify-listing" };
       } else {
         // Hostify expects total_price in the listing's currency. Travelholic
@@ -146,6 +154,7 @@ export async function POST(req: NextRequest) {
           log("hostify success", {
             reservationId: res.reservation.id,
             confirmationCode: res.reservation.confirmation_code,
+            status: HOSTIFY_BOOKING_STATUS,
           });
         } else {
           hostifyResult = {
@@ -189,7 +198,10 @@ export async function POST(req: NextRequest) {
       });
       log("webhook delivered", { ref: finalRef });
     } catch (err) {
-      logErr("webhook failed", { ref: finalRef, message: err instanceof Error ? err.message : String(err) });
+      logErr("webhook failed", {
+        ref: finalRef,
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
   } else {
     log("no webhook configured", { ref: finalRef });
@@ -198,7 +210,11 @@ export async function POST(req: NextRequest) {
   // Surface Hostify failures to the client so the dialog can show an
   // honest error instead of a fake confirmation code.
   if (hostifyResult && hostifyResult.ok === false && hostifyResult.error !== "no-hostify-listing") {
-    log("response 502", { ref: fallbackRef, error: hostifyResult.error, ms: Date.now() - t0 });
+    log("response 502", {
+      ref: fallbackRef,
+      error: hostifyResult.error,
+      ms: Date.now() - t0,
+    });
     return NextResponse.json(
       {
         ok: false,
