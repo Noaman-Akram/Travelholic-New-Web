@@ -207,10 +207,19 @@ export function BookingDialog({
         return;
       }
 
-      // Redirect to SuperPay's hosted page. The user returns to
-      // /booking/success or /booking/cancelled depending on outcome.
-      // The webhook handles the Hostify status transition independently.
-      window.location.href = json.paymentUrl;
+      // Open SuperPay's hosted page in a new tab so the original tab
+      // (with its logs/network/devtools open) is preserved. The user
+      // returns to /booking/success or /booking/cancelled in the new
+      // tab; the webhook handles the Hostify status transition
+      // independently of the browser flow.
+      const opened = window.open(json.paymentUrl, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        // Popup blocked — fall back to same-tab redirect so the user
+        // isn't stuck on a non-actionable dialog.
+        window.location.href = json.paymentUrl;
+        return;
+      }
+      setPaymentLoading(false);
     } catch {
       setPaymentError(true);
       setPaymentLoading(false);
