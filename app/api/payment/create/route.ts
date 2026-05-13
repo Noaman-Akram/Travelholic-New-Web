@@ -52,7 +52,9 @@ const CreateSchema = z.object({
  * cancel via cancelled_by_guest on PAY_FAILED / PAY_CANCELLED.
  */
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now();
   if (!SUPERPAY_AVAILABLE()) {
+    console.warn("[payment/create] superpay-not-configured — missing env vars");
     return NextResponse.json(
       { ok: false, error: "superpay-not-configured" },
       { status: 503 },
@@ -63,17 +65,32 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
+    console.warn("[payment/create] invalid-json");
     return NextResponse.json({ ok: false, error: "invalid-json" }, { status: 400 });
   }
 
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) {
+    console.warn("[payment/create] invalid-payload", {
+      issues: parsed.error.flatten(),
+    });
     return NextResponse.json(
       { ok: false, error: "invalid-payload", issues: parsed.error.flatten() },
       { status: 400 },
     );
   }
   const data = parsed.data;
+
+  console.log("[payment/create] request", {
+    hostifyReservationId: data.hostifyReservationId,
+    homeSlug: data.homeSlug,
+    checkIn: data.checkIn,
+    checkOut: data.checkOut,
+    nights: data.nights,
+    guests: data.guests,
+    totalEGP: data.pricing.totalEGP,
+    locale: data.locale,
+  });
 
   // Format: TH-<hostify-id>-<short-suffix>. The suffix lets the same
   // reservation be retried with a fresh SuperPay order if the first
@@ -117,6 +134,14 @@ export async function POST(req: NextRequest) {
       clientId: data.guest.email,
     });
 
+    console.log("[payment/create] success", {
+      merchantOrderId,
+      elapsedMs: Date.now() - startedAt,
+      paymentUrlHost: (() => {
+        try { return new URL(url).host; } catch { return "?"; }
+      })(),
+    });
+
     return NextResponse.json({
       ok: true,
       merchantOrderId,
@@ -127,10 +152,12 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const code =
       err instanceof SuperPayError ? `superpay-${err.status}` : "superpay-error";
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.error("[payment/create] failed:", err);
-    }
+    console.error("[payment/create] failed", {
+      merchantOrderId,
+      elapsedMs: Date.now() - startedAt,
+      code,
+      message: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json(
       { ok: false, error: code, merchantOrderId },
       { status: 502 },

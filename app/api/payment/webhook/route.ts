@@ -30,8 +30,14 @@ import type { WebhookNotificationParams } from "@/lib/superpay/types";
  * avoids us needing a separate lookup store between the two systems.
  */
 export async function GET(req: NextRequest) {
+  const startedAt = Date.now();
+  console.log("[payment/webhook] received", {
+    hasResponse: req.nextUrl.searchParams.has("response"),
+  });
+
   const responseParam = req.nextUrl.searchParams.get("response");
   if (!responseParam) {
+    console.warn("[payment/webhook] missing-response");
     return NextResponse.json({ ok: false, error: "missing-response" }, { status: 400 });
   }
 
@@ -40,23 +46,33 @@ export async function GET(req: NextRequest) {
     const json = Buffer.from(responseParam, "base64").toString("utf8");
     notification = JSON.parse(json) as WebhookNotificationParams;
   } catch {
+    console.warn("[payment/webhook] invalid-base64");
     return NextResponse.json({ ok: false, error: "invalid-base64" }, { status: 400 });
   }
 
   const { merchantOrderId, paymentgwOrderId } = notification;
   if (!merchantOrderId || !paymentgwOrderId) {
+    console.warn("[payment/webhook] missing-fields", {
+      hasMerchantOrderId: Boolean(merchantOrderId),
+      hasPaymentgwOrderId: Boolean(paymentgwOrderId),
+    });
     return NextResponse.json({ ok: false, error: "missing-fields" }, { status: 400 });
   }
+
+  console.log("[payment/webhook] notification", {
+    merchantOrderId,
+    paymentgwOrderId,
+    orderStatus: notification.orderStatus,
+    totalAmount: notification.totalAmount,
+    currency: notification.currency,
+  });
 
   // The Hostify reservation id is the part the webhook actually needs.
   const reservationId = parseHostifyIdFromMerchantOrderId(merchantOrderId);
   if (!reservationId) {
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[payment/webhook] merchantOrderId ${merchantOrderId} doesn't encode a Hostify id`,
-      );
-    }
+    console.warn("[payment/webhook] no-reservation-id-in-merchant-order", {
+      merchantOrderId,
+    });
     return NextResponse.json(
       { ok: true, ignored: "merchant-order-id-not-reservation-prefixed" },
     );
@@ -96,10 +112,11 @@ export async function GET(req: NextRequest) {
     verifiedStatus = status.orderStatus;
   } catch (err) {
     const code = err instanceof SuperPayError ? `superpay-${err.status}` : "verify-error";
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.error("[payment/webhook] verify failed:", err);
-    }
+    console.error("[payment/webhook] verify-failed", {
+      merchantOrderId,
+      code,
+      message: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json({ ok: false, error: code }, { status: 502 });
   }
 
@@ -156,13 +173,12 @@ export async function GET(req: NextRequest) {
         });
       }
     }
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.error(
-        `[payment/webhook] Hostify update FAILED for reservation ${reservationId}:`,
-        err,
-      );
-    }
+    console.error("[payment/webhook] hostify-update-failed", {
+      merchantOrderId,
+      reservationId,
+      targetHostifyStatus,
+      detail: err instanceof HostifyError ? err.body.slice(0, 200) : String(err),
+    });
     return NextResponse.json(
       {
         ok: false,
@@ -172,6 +188,14 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     );
   }
+
+  console.log("[payment/webhook] done", {
+    merchantOrderId,
+    elapsedMs: Date.now() - startedAt,
+    orderStatus: verifiedStatus,
+    hostifyAction: targetHostifyStatus,
+    reservationId,
+  });
 
   return NextResponse.json({
     ok: true,

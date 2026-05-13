@@ -198,10 +198,45 @@ export const superpay = {
       },
     };
 
-    const data = await postJson<IframeUrlResponse>(
-      "/ordertransaction/api/1/sts/iframe/url",
-      body,
-    );
+    console.log("[superpay] createIframeUrl request", {
+      merchantOrderId: body.order.merchantOrderId,
+      amount: body.order.amount,
+      currency: body.order.currency,
+      merchantCode: body.merchant.code,
+      signaturePrefix: body.signature.slice(0, 12),
+      redirectionURL: body.redirectionURL,
+      defaultPaymentMode: body.defaultPaymentMode,
+      merchantLanguage: body.merchantLanguage,
+      webhookUrl,
+    });
+
+    const startedAt = Date.now();
+    let data: IframeUrlResponse;
+    try {
+      data = await postJson<IframeUrlResponse>(
+        "/ordertransaction/api/1/sts/iframe/url",
+        body,
+      );
+    } catch (err) {
+      const e = err as { status?: number; message?: string; body?: string };
+      console.error("[superpay] createIframeUrl http-error", {
+        merchantOrderId: body.order.merchantOrderId,
+        elapsedMs: Date.now() - startedAt,
+        status: e.status,
+        message: e.message,
+        body: typeof e.body === "string" ? e.body.slice(0, 400) : undefined,
+      });
+      throw err;
+    }
+
+    console.log("[superpay] createIframeUrl response", {
+      merchantOrderId: body.order.merchantOrderId,
+      elapsedMs: Date.now() - startedAt,
+      status: data.status,
+      hasUrl: "url" in data && Boolean(data.url),
+      errorCode: "errorCode" in data ? data.errorCode : undefined,
+      errorEn: "descriptionEnglish" in data ? data.descriptionEnglish : undefined,
+    });
 
     if (data.status !== "SUCCESS" || !("url" in data) || !data.url) {
       const failure = data as { errorCode?: string; descriptionEnglish?: string };
