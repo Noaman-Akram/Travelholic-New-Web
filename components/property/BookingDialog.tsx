@@ -177,10 +177,7 @@ export function BookingDialog({
     setManualPaymentUrl(null);
 
     try {
-      // 1) Ask our backend to sign the SuperPay payload (secret stays
-      //    server-side). We get back the exact endpoint + headers +
-      //    body to POST to SuperPay.
-      const signRes = await fetch("/api/payment/create", {
+      const res = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -188,52 +185,30 @@ export function BookingDialog({
           amount: pricing.totalEGP,
         }),
       });
-      const signed = (await signRes.json()) as {
+      const json = (await res.json()) as {
         ok: boolean;
+        paymentUrl?: string;
         merchantOrderId?: string;
-        endpoint?: string;
-        headers?: Record<string, string>;
-        body?: unknown;
-        error?: string;
+        request?: { endpoint: string; body: unknown };
+        response?: { httpStatus: number; status?: string; url?: string; descriptionEnglish?: string };
       };
-      if (!signRes.ok || !signed.ok || !signed.endpoint || !signed.body) {
-        console.error("[superpay] sign failed", signed);
+
+      // The full server-to-server SuperPay request + response, echoed
+      // back so you can inspect them in the browser console.
+      console.log("[superpay] sent →", json.request?.endpoint);
+      console.log("[superpay] body  →", json.request?.body);
+      console.log("[superpay] resp  ←", json.response);
+
+      if (!json.ok || !json.paymentUrl) {
         setPaymentError(true);
         setPaymentLoading(false);
         return;
       }
 
-      console.log("[superpay] POST", signed.endpoint);
-      console.log("[superpay] headers", signed.headers);
-      console.log("[superpay] body", signed.body);
-
-      // 2) Fire the SuperPay call directly from the browser. Visible
-      //    in DevTools Network tab as the call to merchant.super-pay.com.
-      const payRes = await fetch(signed.endpoint, {
-        method: "POST",
-        headers: signed.headers,
-        body: JSON.stringify(signed.body),
-      });
-      const payJson = (await payRes.json()) as {
-        status?: "SUCCESS" | "FAILURE";
-        url?: string;
-        errorCode?: string;
-        descriptionEnglish?: string;
-      };
-      console.log("[superpay] response", { httpStatus: payRes.status, ...payJson });
-
-      if (payJson.status !== "SUCCESS" || !payJson.url) {
-        setPaymentError(true);
-        setPaymentLoading(false);
-        return;
-      }
-
-      // 3) Open the hosted payment page in a new tab. Original tab
-      //    (devtools/network/console) stays intact.
-      const opened = window.open(payJson.url, "_blank", "noopener,noreferrer");
+      const opened = window.open(json.paymentUrl, "_blank", "noopener,noreferrer");
       if (!opened) {
         console.warn("[superpay] popup blocked — showing manual link");
-        setManualPaymentUrl(payJson.url);
+        setManualPaymentUrl(json.paymentUrl);
       }
       setPaymentLoading(false);
     } catch (err) {

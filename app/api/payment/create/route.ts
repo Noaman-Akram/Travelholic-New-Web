@@ -3,65 +3,37 @@ import { z } from "zod";
 import { signOrderCreate } from "@/lib/superpay/signature";
 import { buildMerchantOrderIdFromReservation } from "@/lib/superpay/orders";
 
-const CreateSchema = z.object({
+const Schema = z.object({
   hostifyReservationId: z.number().int().positive(),
   amount: z.number().positive(),
 });
 
-/**
- * Builds the SuperPay iframe-URL request body and signs it server-side,
- * then returns the full payload to the browser. The browser fires the
- * actual POST to SuperPay so it's visible in DevTools Network tab.
- *
- * Only the signature secret (SUPERPAY_SECURE_HASH_KEY) stays
- * server-side; the merchant code and apiKey travel in the body per
- * SuperPay V1.3 spec.
- */
 export async function POST(req: NextRequest) {
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "invalid-json" }, { status: 400 });
-  }
-
-  const parsed = CreateSchema.safeParse(body);
+  const parsed = Schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json(
-      { ok: false, error: "invalid-payload", issues: parsed.error.flatten() },
-      { status: 400 },
-    );
+    return NextResponse.json({ ok: false, error: "invalid-payload" }, { status: 400 });
   }
   const { hostifyReservationId, amount } = parsed.data;
 
-  const baseUrl = process.env.SUPERPAY_BASE_URL?.trim();
-  const merchantCode = process.env.SUPERPAY_MERCHANT_CODE?.trim();
-  const apiKey = process.env.SUPERPAY_API_KEY?.trim();
-  const paymentMode = process.env.SUPERPAY_PAYMENT_MODE?.trim() || "THREE_DS";
-  const language = process.env.SUPERPAY_MERCHANT_LANGUAGE?.trim() || "EN";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
-
-  if (!baseUrl || !merchantCode || !apiKey || !siteUrl) {
-    return NextResponse.json(
-      { ok: false, error: "superpay-not-configured" },
-      { status: 503 },
-    );
-  }
+  const baseUrl = process.env.SUPERPAY_BASE_URL!.replace(/\/$/, "");
+  const merchantCode = process.env.SUPERPAY_MERCHANT_CODE!;
+  const apiKey = process.env.SUPERPAY_API_KEY!;
+  const paymentMode = process.env.SUPERPAY_PAYMENT_MODE || "THREE_DS";
+  const language = process.env.SUPERPAY_MERCHANT_LANGUAGE || "EN";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!.replace(/\/$/, "");
 
   const merchantOrderId = buildMerchantOrderIdFromReservation(hostifyReservationId);
   const amountTwoDecimal = Math.round(amount * 100) / 100;
-  const currency = "EGP";
-
   const signature = signOrderCreate({
     merchantOrderId,
     amount: amountTwoDecimal,
-    currency,
+    currency: "EGP",
   });
-
   const webhookUrl = `${siteUrl}/api/payment/webhook`;
+
   const requestBody = {
     merchant: { code: merchantCode, apiKey },
-    order: { merchantOrderId, amount: amountTwoDecimal, currency },
+    order: { merchantOrderId, amount: amountTwoDecimal, currency: "EGP" },
     signature,
     redirectionURL: `${siteUrl}/booking/success?order=${encodeURIComponent(merchantOrderId)}`,
     delayTime: 3000,
@@ -73,17 +45,27 @@ export async function POST(req: NextRequest) {
       refundCallbackUrls: [webhookUrl],
     },
   };
+  const endpoint = `${baseUrl}/ordertransaction/api/1/sts/iframe/url`;
 
-  console.log("[payment/create] signed", { merchantOrderId, amount: amountTwoDecimal });
+  console.log("[superpay] POST", endpoint, JSON.stringify(requestBody));
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+    body: JSON.stringify(requestBody),
+    cache: "no-store",
+  });
+  const text = await res.text();
+  let response: { status?: string; url?: string; descriptionEnglish?: string } = {};
+  try { response = JSON.parse(text); } catch { /* leave empty */ }
+
+  console.log("[superpay] response", res.status, text);
 
   return NextResponse.json({
-    ok: true,
+    ok: response.status === "SUCCESS" && Boolean(response.url),
+    paymentUrl: response.url,
     merchantOrderId,
-    endpoint: `${baseUrl.replace(/\/$/, "")}/ordertransaction/api/1/sts/iframe/url`,
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": apiKey,
-    },
-    body: requestBody,
+    request: { endpoint, body: requestBody },
+    response: { httpStatus: res.status, ...response },
   });
 }
