@@ -55,3 +55,7 @@ next-env.d.ts
 
 # Claude Code per-machine permissions
 .claude/settings.local.json
+
+# Vercel + worktrees
+.claude/worktrees/
+super pay intg refrence docs/
