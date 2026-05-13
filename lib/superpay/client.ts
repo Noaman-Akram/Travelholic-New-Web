@@ -171,6 +171,13 @@ export const superpay = {
       amount: args.amount,
       currency,
     });
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+    if (!siteUrl) {
+      throw new Error(
+        "NEXT_PUBLIC_SITE_URL is not set. Required to build SuperPay redirect/callback URLs.",
+      );
+    }
+    const webhookUrl = `${siteUrl}/api/payment/webhook`;
     const body: IframeUrlRequest = {
       merchant: { code: getMerchantCode(), apiKey: getApiKey() },
       order: {
@@ -180,6 +187,15 @@ export const superpay = {
       },
       ...(args.clientId ? { clientId: args.clientId } : {}),
       signature,
+      redirectionURL: `${siteUrl}/booking/success?order=${encodeURIComponent(args.merchantOrderId)}`,
+      delayTime: 3000,
+      defaultPaymentMode: process.env.SUPERPAY_PAYMENT_MODE?.trim() || "THREE_DS",
+      merchantLanguage: process.env.SUPERPAY_MERCHANT_LANGUAGE?.trim() || "EN",
+      callbackConfig: {
+        successCallbackUrls: [webhookUrl],
+        failureCallbackUrls: [webhookUrl],
+        refundCallbackUrls: [webhookUrl],
+      },
     };
 
     const data = await postJson<IframeUrlResponse>(
