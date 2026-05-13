@@ -27,6 +27,15 @@ export type IframeUrlRequest = {
   /** Optional unique-per-customer id; enables card tokenization. */
   clientId?: string;
   signature: string;         // HMAC-SHA256 hex of merchantOrderId + amount + currency
+  redirectionURL: string;    // where SuperPay redirects the user post-payment
+  delayTime?: number;        // ms before redirect, default 3000
+  defaultPaymentMode?: string;
+  merchantLanguage?: string;
+  callbackConfig: {
+    successCallbackUrls: string[];
+    failureCallbackUrls: string[];
+    refundCallbackUrls: string[];
+  };
 };
 
 export type IframeUrlSuccess = {
