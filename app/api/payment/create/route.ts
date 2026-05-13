@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { url } = await superpay.createIframeUrl({
+    const { url, debug } = await superpay.createIframeUrl({
       merchantOrderId,
       amount: data.pricing.totalEGP,
       currency: "EGP",
@@ -142,12 +142,33 @@ export async function POST(req: NextRequest) {
       })(),
     });
 
+    // Redact secrets before exposing the SuperPay request to the
+    // browser. The user can still see the exact endpoint, structure,
+    // and merchant code — just not the API key or full signature.
+    const redactedHeaders = {
+      ...debug.requestHeaders,
+      "X-API-Key": "***REDACTED***",
+    };
+    const redactedBody = {
+      ...debug.requestBody,
+      merchant: {
+        code: debug.requestBody.merchant.code,
+        apiKey: "***REDACTED***",
+      },
+    };
+
     return NextResponse.json({
       ok: true,
       merchantOrderId,
       paymentUrl: url,
       amount: data.pricing.totalEGP,
       currency: "EGP",
+      debug: {
+        endpoint: debug.endpoint,
+        requestHeaders: redactedHeaders,
+        requestBody: redactedBody,
+        rawResponse: debug.rawResponse,
+      },
     });
   } catch (err) {
     const code =

@@ -62,6 +62,7 @@ export function BookingDialog({
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
+  const [manualPaymentUrl, setManualPaymentUrl] = useState<string | null>(null);
   const [pendingReservation, setPendingReservation] = useState<{
     id: number;
     confirmationCode: string;
@@ -82,6 +83,7 @@ export function BookingDialog({
         setBookingError(null);
         setPaymentLoading(false);
         setPaymentError(false);
+        setManualPaymentUrl(null);
         setPendingReservation(null);
       }, 250);
     }
@@ -172,6 +174,7 @@ export function BookingDialog({
     if (!validatedGuest || !pendingReservation) return;
     setPaymentLoading(true);
     setPaymentError(false);
+    setManualPaymentUrl(null);
 
     try {
       const res = await fetch("/api/payment/create", {
@@ -198,8 +201,33 @@ export function BookingDialog({
       const json = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         paymentUrl?: string;
+        merchantOrderId?: string;
+        amount?: number;
+        currency?: string;
         error?: string;
+        debug?: {
+          endpoint?: string;
+          requestHeaders?: Record<string, string>;
+          requestBody?: unknown;
+          rawResponse?: unknown;
+        };
       };
+
+      console.log("[booking] /api/payment/create response", {
+        httpStatus: res.status,
+        ok: json.ok,
+        error: json.error,
+        merchantOrderId: json.merchantOrderId,
+        amount: json.amount,
+        currency: json.currency,
+        paymentUrl: json.paymentUrl,
+      });
+      if (json.debug) {
+        console.log("[booking] SuperPay request — endpoint", json.debug.endpoint);
+        console.log("[booking] SuperPay request — headers", json.debug.requestHeaders);
+        console.log("[booking] SuperPay request — body", json.debug.requestBody);
+        console.log("[booking] SuperPay raw response", json.debug.rawResponse);
+      }
 
       if (!res.ok || !json.ok || !json.paymentUrl) {
         setPaymentError(true);
@@ -207,20 +235,20 @@ export function BookingDialog({
         return;
       }
 
-      // Open SuperPay's hosted page in a new tab so the original tab
-      // (with its logs/network/devtools open) is preserved. The user
-      // returns to /booking/success or /booking/cancelled in the new
-      // tab; the webhook handles the Hostify status transition
-      // independently of the browser flow.
+      // Open SuperPay's hosted page in a new tab. The original tab
+      // (with devtools/network/console open) is preserved entirely —
+      // no same-page redirect ever. The webhook handles the Hostify
+      // status transition independently of the browser flow.
       const opened = window.open(json.paymentUrl, "_blank", "noopener,noreferrer");
       if (!opened) {
-        // Popup blocked — fall back to same-tab redirect so the user
-        // isn't stuck on a non-actionable dialog.
-        window.location.href = json.paymentUrl;
-        return;
+        // Popup blocked — keep the current page untouched and expose a
+        // manual link so the user can open it themselves.
+        console.warn("[booking] popup blocked — showing manual link");
+        setManualPaymentUrl(json.paymentUrl);
       }
       setPaymentLoading(false);
-    } catch {
+    } catch (err) {
+      console.error("[booking] /api/payment/create failed", err);
       setPaymentError(true);
       setPaymentLoading(false);
     }
@@ -477,6 +505,20 @@ export function BookingDialog({
                 {paymentError ? (
                   <div className="mt-5 rounded-2xl bg-maroon/5 ring-1 ring-maroon/30 px-4 py-3 text-sm text-maroon">
                     {t("payment.errors.create")}
+                  </div>
+                ) : null}
+
+                {manualPaymentUrl ? (
+                  <div className="mt-5 rounded-2xl bg-butter/30 ring-1 ring-navy/20 px-4 py-3 text-sm text-navy">
+                    <p className="mb-2 font-medium">{t("payment.popupBlocked")}</p>
+                    <a
+                      href={manualPaymentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 underline underline-offset-4 break-all"
+                    >
+                      {manualPaymentUrl}
+                    </a>
                   </div>
                 ) : null}
               </div>

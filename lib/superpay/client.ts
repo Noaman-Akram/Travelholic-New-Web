@@ -172,7 +172,15 @@ export const superpay = {
     amount: number;
     currency?: SuperPayCurrency;
     clientId?: string;
-  }): Promise<{ url: string }> {
+  }): Promise<{
+    url: string;
+    debug: {
+      endpoint: string;
+      requestHeaders: Record<string, string>;
+      requestBody: IframeUrlRequest;
+      rawResponse: IframeUrlResponse;
+    };
+  }> {
     const currency: SuperPayCurrency = args.currency ?? "EGP";
     const signature = signOrderCreate({
       merchantOrderId: args.merchantOrderId,
@@ -253,7 +261,19 @@ export const superpay = {
         failure.descriptionEnglish ?? `iframe-url failed (${failure.errorCode ?? "unknown"})`,
       );
     }
-    return { url: data.url };
+    return {
+      url: data.url,
+      debug: {
+        endpoint: `${getBase()}/ordertransaction/api/1/sts/iframe/url`,
+        requestHeaders: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-API-Key": getApiKey(),
+        },
+        requestBody: body,
+        rawResponse: data,
+      },
+    };
   },
 
   /**

@@ -617,6 +617,7 @@
       "cardSecure": "Secured by SuperPay. PCI DSS compliant.",
       "primaryCta": "Continue to payment",
       "redirecting": "Opening secure payment…",
+      "popupBlocked": "Your browser blocked the new tab. Click the link below to open the payment page:",
       "errors": {
         "create": "Couldn't open the payment page. Try again, or contact us on WhatsApp — your dates are still held."
       }
