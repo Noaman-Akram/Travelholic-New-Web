@@ -62,7 +62,6 @@ export function BookingDialog({
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
-  const [manualPaymentUrl, setManualPaymentUrl] = useState<string | null>(null);
   const [pendingReservation, setPendingReservation] = useState<{
     id: number;
     confirmationCode: string;
@@ -83,7 +82,6 @@ export function BookingDialog({
         setBookingError(null);
         setPaymentLoading(false);
         setPaymentError(false);
-        setManualPaymentUrl(null);
         setPendingReservation(null);
       }, 250);
     }
@@ -174,7 +172,6 @@ export function BookingDialog({
     if (!validatedGuest || !pendingReservation) return;
     setPaymentLoading(true);
     setPaymentError(false);
-    setManualPaymentUrl(null);
 
     try {
       const res = await fetch("/api/payment/create", {
@@ -188,16 +185,7 @@ export function BookingDialog({
       const json = (await res.json()) as {
         ok: boolean;
         paymentUrl?: string;
-        merchantOrderId?: string;
-        request?: { endpoint: string; body: unknown };
-        response?: { httpStatus: number; status?: string; url?: string; descriptionEnglish?: string };
       };
-
-      // The full server-to-server SuperPay request + response, echoed
-      // back so you can inspect them in the browser console.
-      console.log("[superpay] sent →", json.request?.endpoint);
-      console.log("[superpay] body  →", json.request?.body);
-      console.log("[superpay] resp  ←", json.response);
 
       if (!json.ok || !json.paymentUrl) {
         setPaymentError(true);
@@ -205,14 +193,9 @@ export function BookingDialog({
         return;
       }
 
-      const opened = window.open(json.paymentUrl, "_blank", "noopener,noreferrer");
-      if (!opened) {
-        console.warn("[superpay] popup blocked — showing manual link");
-        setManualPaymentUrl(json.paymentUrl);
-      }
+      window.open(json.paymentUrl, "_blank", "noopener,noreferrer");
       setPaymentLoading(false);
-    } catch (err) {
-      console.error("[superpay] error", err);
+    } catch {
       setPaymentError(true);
       setPaymentLoading(false);
     }
@@ -461,28 +444,9 @@ export function BookingDialog({
                   <p className="mt-3 text-xs text-navy/55">{t("payment.currencyNote")}</p>
                 </div>
 
-                <p className="mt-5 inline-flex items-center gap-2 text-xs text-navy/65">
-                  <Lock className="h-3.5 w-3.5" />
-                  {t("payment.cardSecure")}
-                </p>
-
                 {paymentError ? (
                   <div className="mt-5 rounded-2xl bg-maroon/5 ring-1 ring-maroon/30 px-4 py-3 text-sm text-maroon">
                     {t("payment.errors.create")}
-                  </div>
-                ) : null}
-
-                {manualPaymentUrl ? (
-                  <div className="mt-5 rounded-2xl bg-butter/30 ring-1 ring-navy/20 px-4 py-3 text-sm text-navy">
-                    <p className="mb-2 font-medium">{t("payment.popupBlocked")}</p>
-                    <a
-                      href={manualPaymentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 underline underline-offset-4 break-all"
-                    >
-                      {manualPaymentUrl}
-                    </a>
                   </div>
                 ) : null}
               </div>
