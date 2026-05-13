@@ -8,10 +8,12 @@ import type {
   SuperPayCurrency,
 } from "./types";
 
-const DEFAULT_BASE = "https://merchant.super-pay.com";
-
 function getBase(): string {
-  return (process.env.SUPERPAY_BASE_URL ?? DEFAULT_BASE).replace(/\/$/, "");
+  const base = process.env.SUPERPAY_BASE_URL?.trim();
+  if (!base) {
+    throw new SuperPayError(0, "SUPERPAY_BASE_URL is not set");
+  }
+  return base.replace(/\/$/, "");
 }
 
 function getMerchantCode(): string {
@@ -32,9 +34,10 @@ function getApiKey(): string {
 
 export const SUPERPAY_AVAILABLE = (): boolean =>
   Boolean(
-    process.env.SUPERPAY_MERCHANT_CODE &&
-      process.env.SUPERPAY_API_KEY &&
-      process.env.SUPERPAY_SECRET_KEY,
+    process.env.SUPERPAY_BASE_URL?.trim() &&
+      process.env.SUPERPAY_MERCHANT_CODE?.trim() &&
+      process.env.SUPERPAY_API_KEY?.trim() &&
+      process.env.SUPERPAY_SECURE_HASH_KEY?.trim(),
   );
 
 export class SuperPayError extends Error {
@@ -75,6 +78,7 @@ async function postJson<T>(
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      "X-API-Key": getApiKey(),
       ...headers,
     },
     body: JSON.stringify(body),
@@ -111,7 +115,11 @@ async function getJson<T>(path: string, headers: Record<string, string> = {}): P
   const url = `${getBase()}${path}`;
   const res = await fetch(url, {
     method: "GET",
-    headers: { Accept: "application/json", ...headers },
+    headers: {
+      Accept: "application/json",
+      "X-API-Key": getApiKey(),
+      ...headers,
+    },
     cache: "no-store",
   });
   const text = await res.text();

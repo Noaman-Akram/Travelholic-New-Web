@@ -8,7 +8,14 @@ import type { PendingBooking } from "./types";
 // Reservation-first model: each merchantOrderId encodes the numeric
 // Hostify reservation id so the webhook can promote pending → accepted
 // (or cancel) by hitting Hostify directly.
-const RESERVATION_ID_PREFIX = "TH-";
+//
+// SuperPay requires merchantOrderId to be alphanumeric only — no
+// hyphens, underscores, or other separators. Format:
+//   TH<hostifyReservationId>X<hexRand>
+// `X` is the separator because it's not a hex digit and not in
+// numeric Hostify IDs, so the parser can split unambiguously.
+const RESERVATION_ID_PREFIX = "TH";
+const RESERVATION_ID_SEPARATOR = "X";
 
 /**
  * Local file-backed store for in-flight bookings. Created on POST
@@ -32,29 +39,16 @@ function fileFor(merchantOrderId: string): string {
 }
 
 /**
- * Pre-reservation flavour: kept for any legacy caller. Use
- * buildMerchantOrderIdFromReservation when you already have a Hostify
- * reservation id (which is the normal flow now).
- */
-export function generateMerchantOrderId(homeSlug: string): string {
-  const slugSig = homeSlug.replace(/[^a-z0-9]/gi, "").slice(0, 8).toUpperCase() || "HOME";
-  const ts = Date.now().toString(36).toUpperCase();
-  const rand = randomBytes(3).toString("hex").toUpperCase();
-  return `${RESERVATION_ID_PREFIX}${slugSig}-${ts}-${rand}`;
-}
-
-/**
- * Reservation-first merchantOrderId. Format: `TH-<hostify-id>-<rand>`.
- * The hostify id (numeric, ~9 digits) is the part the webhook + expire
- * cron extract; the random suffix lets the same reservation be retried
- * with a fresh SuperPay order if the first attempt times out, without
- * collisions on SuperPay's side.
+ * Reservation-first merchantOrderId. Format: `TH<hostifyId>X<rand>`.
+ * Alphanumeric only per SuperPay spec. `X` separates the Hostify id
+ * (pure digits) from the hex random suffix; X is not a hex digit so
+ * the parser can locate the boundary unambiguously.
  */
 export function buildMerchantOrderIdFromReservation(
   hostifyReservationId: number,
 ): string {
-  const rand = randomBytes(2).toString("hex").toUpperCase();
-  return `${RESERVATION_ID_PREFIX}${hostifyReservationId}-${rand}`;
+  const rand = randomBytes(4).toString("hex").toUpperCase();
+  return `${RESERVATION_ID_PREFIX}${hostifyReservationId}${RESERVATION_ID_SEPARATOR}${rand}`;
 }
 
 /**
@@ -67,10 +61,9 @@ export function parseHostifyIdFromMerchantOrderId(
 ): number | null {
   if (!merchantOrderId.startsWith(RESERVATION_ID_PREFIX)) return null;
   const rest = merchantOrderId.slice(RESERVATION_ID_PREFIX.length);
-  // The id is the first dash-separated segment that's purely numeric.
-  // Defensive against future format tweaks.
-  const firstSegment = rest.split("-")[0];
-  const n = Number(firstSegment);
+  const sepIndex = rest.indexOf(RESERVATION_ID_SEPARATOR);
+  const idPart = sepIndex >= 0 ? rest.slice(0, sepIndex) : rest;
+  const n = Number(idPart);
   if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 0) return null;
   return n;
 }
