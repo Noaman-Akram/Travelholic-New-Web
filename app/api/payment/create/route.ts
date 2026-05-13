@@ -65,7 +65,5 @@ export async function POST(req: NextRequest) {
     ok: response.status === "SUCCESS" && Boolean(response.url),
     paymentUrl: response.url,
     merchantOrderId,
-    request: { endpoint, body: requestBody },
-    response: { httpStatus: res.status, ...response },
   });
 }
