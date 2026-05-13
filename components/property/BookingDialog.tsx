@@ -177,78 +177,67 @@ export function BookingDialog({
     setManualPaymentUrl(null);
 
     try {
-      const res = await fetch("/api/payment/create", {
+      // 1) Ask our backend to sign the SuperPay payload (secret stays
+      //    server-side). We get back the exact endpoint + headers +
+      //    body to POST to SuperPay.
+      const signRes = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hostifyReservationId: pendingReservation.id,
-          hostifyConfirmationCode: pendingReservation.confirmationCode,
-          homeSlug: home.slug,
-          checkIn,
-          checkOut,
-          nights: pricing.nights,
-          guests,
-          guest: validatedGuest,
-          pricing: {
-            subtotalEGP: pricing.subtotalEGP,
-            discountEGP: pricing.discountEGP,
-            cleaningFeeEGP: pricing.cleaningFeeEGP,
-            totalEGP: pricing.totalEGP,
-          },
-          locale,
+          amount: pricing.totalEGP,
         }),
       });
-      const json = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        paymentUrl?: string;
+      const signed = (await signRes.json()) as {
+        ok: boolean;
         merchantOrderId?: string;
-        amount?: number;
-        currency?: string;
+        endpoint?: string;
+        headers?: Record<string, string>;
+        body?: unknown;
         error?: string;
-        debug?: {
-          endpoint?: string;
-          requestHeaders?: Record<string, string>;
-          requestBody?: unknown;
-          rawResponse?: unknown;
-        };
       };
-
-      console.log("[booking] /api/payment/create response", {
-        httpStatus: res.status,
-        ok: json.ok,
-        error: json.error,
-        merchantOrderId: json.merchantOrderId,
-        amount: json.amount,
-        currency: json.currency,
-        paymentUrl: json.paymentUrl,
-      });
-      if (json.debug) {
-        console.log("[booking] SuperPay request — endpoint", json.debug.endpoint);
-        console.log("[booking] SuperPay request — headers", json.debug.requestHeaders);
-        console.log("[booking] SuperPay request — body", json.debug.requestBody);
-        console.log("[booking] SuperPay raw response", json.debug.rawResponse);
-      }
-
-      if (!res.ok || !json.ok || !json.paymentUrl) {
+      if (!signRes.ok || !signed.ok || !signed.endpoint || !signed.body) {
+        console.error("[superpay] sign failed", signed);
         setPaymentError(true);
         setPaymentLoading(false);
         return;
       }
 
-      // Open SuperPay's hosted page in a new tab. The original tab
-      // (with devtools/network/console open) is preserved entirely —
-      // no same-page redirect ever. The webhook handles the Hostify
-      // status transition independently of the browser flow.
-      const opened = window.open(json.paymentUrl, "_blank", "noopener,noreferrer");
+      console.log("[superpay] POST", signed.endpoint);
+      console.log("[superpay] headers", signed.headers);
+      console.log("[superpay] body", signed.body);
+
+      // 2) Fire the SuperPay call directly from the browser. Visible
+      //    in DevTools Network tab as the call to merchant.super-pay.com.
+      const payRes = await fetch(signed.endpoint, {
+        method: "POST",
+        headers: signed.headers,
+        body: JSON.stringify(signed.body),
+      });
+      const payJson = (await payRes.json()) as {
+        status?: "SUCCESS" | "FAILURE";
+        url?: string;
+        errorCode?: string;
+        descriptionEnglish?: string;
+      };
+      console.log("[superpay] response", { httpStatus: payRes.status, ...payJson });
+
+      if (payJson.status !== "SUCCESS" || !payJson.url) {
+        setPaymentError(true);
+        setPaymentLoading(false);
+        return;
+      }
+
+      // 3) Open the hosted payment page in a new tab. Original tab
+      //    (devtools/network/console) stays intact.
+      const opened = window.open(payJson.url, "_blank", "noopener,noreferrer");
       if (!opened) {
-        // Popup blocked — keep the current page untouched and expose a
-        // manual link so the user can open it themselves.
-        console.warn("[booking] popup blocked — showing manual link");
-        setManualPaymentUrl(json.paymentUrl);
+        console.warn("[superpay] popup blocked — showing manual link");
+        setManualPaymentUrl(payJson.url);
       }
       setPaymentLoading(false);
     } catch (err) {
-      console.error("[booking] /api/payment/create failed", err);
+      console.error("[superpay] error", err);
       setPaymentError(true);
       setPaymentLoading(false);
     }
