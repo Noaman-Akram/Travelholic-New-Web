@@ -1,25 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { superpay, SUPERPAY_AVAILABLE, SuperPayError } from "@/lib/superpay/client";
 import { hostify, HostifyError } from "@/lib/hostify/client";
+import { parseHostifyIdFromMerchantOrderId } from "@/lib/superpay/orders";
 import {
-  getOrder,
-  parseHostifyIdFromMerchantOrderId,
-  updateOrder,
-} from "@/lib/superpay/orders";
+  getTransaction,
+  applyWebhookUpdate,
+  recordHostifyAction,
+  type TransactionStatus,
+} from "@/lib/db/transactions";
 
 /**
- * Client-polled from /booking/success. Returns the current state of a
- * pending order — useful when the webhook hasn't arrived yet (or in
- * local dev where there's no public URL for SuperPay to call).
+ * Client-polled from /booking/success.
  *
- * Acts as a webhook backstop: if SuperPay reports PAY_COMPLETED but
- * the audit envelope doesn't yet show a `payment` block (the webhook
- * hasn't fired), we apply the same Hostify status transition the
- * webhook would have — promoting the pending reservation to
- * `accepted` for success, or `cancelled_by_guest` for failure.
+ * Read path: look up the transactions row. If it's already in a
+ * terminal state (succeeded/failed/cancelled) with a hostify_status
+ * recorded, return that immediately — the webhook did the work.
  *
- * Idempotent: re-applying the same Hostify status returns 400 with a
- * helpful error which we treat as already-applied.
+ * Backstop: if the row is still 'pending' (webhook hasn't fired yet),
+ * re-verify via SuperPay getOrderStatus and apply the same Hostify
+ * transition the webhook would have. This guards local dev (no public
+ * URL) and webhook latency.
  */
 export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get("ref");
@@ -27,34 +27,39 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "missing-ref" }, { status: 400 });
   }
 
-  const order = await getOrder(ref);
-  if (!order) {
+  const row = await getTransaction(ref).catch(() => null);
+  if (!row) {
     return NextResponse.json({ ok: false, error: "not-found" }, { status: 404 });
   }
 
-  // Hostify reservation id is encoded in the merchantOrderId itself —
-  // it's also stored on the audit envelope for redundancy.
   const reservationId =
-    order.hostifyReservationId ?? parseHostifyIdFromMerchantOrderId(ref);
+    row.hostify_reservation_id ?? parseHostifyIdFromMerchantOrderId(ref);
 
-  // If audit already shows the reservation was confirmed (webhook
-  // already did the work), short-circuit.
-  if (order.payment?.orderStatus === "PAY_COMPLETED" && order.hostifyConfirmationCode) {
+  // Terminal state already recorded by webhook → short-circuit.
+  if (row.status === "succeeded" && row.hostify_status === "accepted") {
     return NextResponse.json({
       ok: true,
       state: "confirmed",
-      confirmationCode: order.hostifyConfirmationCode,
-      hostifyReservationId: reservationId ?? null,
-      paidAt: order.payment.completedAt,
+      confirmationCode: row.hostify_confirmation_code,
+      hostifyReservationId: reservationId,
+      paidAt: row.hostify_action_at,
+    });
+  }
+  if (row.status === "failed" || row.status === "cancelled") {
+    return NextResponse.json({
+      ok: true,
+      state: "failed",
+      orderStatus: row.superpay_status,
     });
   }
 
+  // Still pending → re-verify with SuperPay as a backstop.
   if (!SUPERPAY_AVAILABLE()) {
     return NextResponse.json({ ok: true, state: "pending", reason: "superpay-not-configured" });
   }
 
   try {
-    const status = await superpay.getOrderStatus(order.merchantOrderId);
+    const status = await superpay.getOrderStatus(row.merchant_order_id);
     if (status.status !== "SUCCESS") {
       return NextResponse.json({ ok: true, state: "pending" });
     }
@@ -65,20 +70,23 @@ export async function GET(req: NextRequest) {
       status.orderStatus === "CANCELLED" ||
       status.orderStatus === "EXPIRED";
 
-    // Persist whatever SuperPay told us into the audit envelope.
-    await updateOrder(order.merchantOrderId, {
-      payment: {
-        paymentgwOrderId: status.paymentgwOrderId,
-        orderStatus: status.orderStatus,
-        completedAt: status.updatedTime,
-        acquirer: status.acquirer,
-        network: status.network,
-      },
-    });
+    const dbStatus: TransactionStatus = completed
+      ? "succeeded"
+      : status.orderStatus === "CANCELLED"
+        ? "cancelled"
+        : failed
+          ? "failed"
+          : "pending";
+
+    await applyWebhookUpdate(row.merchant_order_id, {
+      superpayStatus: status.orderStatus,
+      paymentGwOrderId: status.paymentgwOrderId,
+      webhookPayload: null,
+      verifyPayload: status as unknown as Parameters<typeof applyWebhookUpdate>[1]["verifyPayload"],
+      status: dbStatus,
+    }).catch(() => {});
 
     if (!completed && !failed) {
-      // INITIATE_AUTHORIZE / REFUNDED / PARTIALLY_REFUNDED — still in
-      // flight from the guest's POV.
       return NextResponse.json({
         ok: true,
         state: "pending",
@@ -87,33 +95,36 @@ export async function GET(req: NextRequest) {
     }
 
     if (!reservationId) {
-      // Audit envelope has no reservation id and the merchantOrderId
-      // can't be decoded. Surface this so an operator can reconcile.
       return NextResponse.json(
-        {
-          ok: false,
-          state: "paid-no-reservation",
-          error: "no-reservation-id",
-        },
+        { ok: false, state: "paid-no-reservation", error: "no-reservation-id" },
         { status: 500 },
       );
     }
 
-    const targetStatus = completed ? "accepted" : "cancelled_by_guest";
+    const targetStatus: "accepted" | "cancelled_by_guest" = completed
+      ? "accepted"
+      : "cancelled_by_guest";
+
     try {
       await hostify.updateReservation(reservationId, {
         status: targetStatus,
         note: completed
-          ? `Paid via SuperPay. Order ${order.merchantOrderId} / payment ${status.paymentgwOrderId}. (status-backstop)`
-          : `SuperPay reported ${status.orderStatus}. Order ${order.merchantOrderId}. (status-backstop)`,
+          ? `Paid via SuperPay. Order ${row.merchant_order_id} / payment ${status.paymentgwOrderId}. (status-backstop)`
+          : `SuperPay reported ${status.orderStatus}. Order ${row.merchant_order_id}. (status-backstop)`,
       });
+      await recordHostifyAction(row.merchant_order_id, targetStatus).catch(() => {});
     } catch (err) {
       if (err instanceof HostifyError) {
         const alreadyInState =
           err.status === 400 && /Status should be one of/i.test(err.body);
-        if (!alreadyInState) {
-          // Real Hostify failure on a paid order — page user, but report
-          // honest state.
+        if (alreadyInState) {
+          await recordHostifyAction(row.merchant_order_id, targetStatus, "already-in-state").catch(() => {});
+        } else {
+          await recordHostifyAction(
+            row.merchant_order_id,
+            "error",
+            err.body.slice(0, 400),
+          ).catch(() => {});
           return NextResponse.json(
             {
               ok: false,
@@ -129,19 +140,14 @@ export async function GET(req: NextRequest) {
     }
 
     if (completed) {
-      // Record on the audit envelope so the next poll short-circuits.
-      // We need the Hostify confirmation_code — re-fetch the reservation.
-      let confirmationCode = order.hostifyConfirmationCode;
+      // Re-fetch confirmation_code from Hostify in case the row didn't
+      // capture it at create-time.
+      let confirmationCode = row.hostify_confirmation_code;
       try {
         const r = await hostify.getReservation(reservationId);
         confirmationCode = r.reservation?.confirmation_code ?? confirmationCode;
       } catch {
-        // Best-effort; the merchantOrderId is enough as a ref otherwise.
-      }
-      if (confirmationCode && confirmationCode !== order.hostifyConfirmationCode) {
-        await updateOrder(order.merchantOrderId, {
-          hostifyConfirmationCode: confirmationCode,
-        });
+        // best-effort
       }
       return NextResponse.json({
         ok: true,

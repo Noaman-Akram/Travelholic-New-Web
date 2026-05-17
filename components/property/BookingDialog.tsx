@@ -179,7 +179,20 @@ export function BookingDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hostifyReservationId: pendingReservation.id,
+          hostifyConfirmationCode: pendingReservation.confirmationCode,
           amount: pricing.totalEGP,
+          homeSlug: home.slug,
+          checkIn,
+          checkOut,
+          nights: pricing.nights,
+          guests,
+          guest: {
+            firstName: validatedGuest.firstName,
+            lastName: validatedGuest.lastName,
+            email: validatedGuest.email,
+            phone: validatedGuest.phone,
+          },
+          locale,
         }),
       });
       const json = (await res.json()) as {
